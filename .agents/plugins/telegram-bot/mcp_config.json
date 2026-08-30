@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "telegram-bot": {
+      "command": "python3",
+      "args": ["/root/bot-mcp/server.py"]
+    }
+  }
+}
