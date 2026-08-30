@@ -9,6 +9,10 @@ A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as 
 
 > 📖 **AI Agents**: See the dedicated [**AI Agent Testing Guide**](docs/AGENT_GUIDE.md) for tool selection workflows, test suites, and best practices.
 
+> [!TIP]
+> **Environment Recommendation**: We strongly recommend using the **Test Server** (`TELEGRAM_TEST_MODE=true`) for bot development and automated testing because it carries **zero risk to your main personal Telegram account**.
+> *Note: Make sure your target bot and user account are on the **same environment** (Test Server bot ↔ Test Server account, or Prod bot ↔ Prod account), as Telegram test and production networks are completely isolated.*
+
 ---
 
 ## 🌟 Features

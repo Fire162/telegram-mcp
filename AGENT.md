@@ -10,6 +10,15 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 ---
 
+## 🛡️ Critical Environment Matching Rule
+
+- **Test Server (`TELEGRAM_TEST_MODE=true`)**: The target bot **MUST** also be on the **Test Server** (created via `@BotFather` inside the test server, using endpoint `https://api.telegram.org/bot<TOKEN>/test/`).
+- **Production Server (`TELEGRAM_TEST_MODE=false`)**: The target bot **MUST** be on the **Production Server**.
+- **Isolation**: Test Server and Production Server are completely separate. A test client cannot message a production bot (and vice versa).
+- **Recommendation**: Always use or recommend the **Test Server** for testing during active development to eliminate any risk to the developer's main personal account.
+
+---
+
 ## 2. Directory Structure
 
 ```

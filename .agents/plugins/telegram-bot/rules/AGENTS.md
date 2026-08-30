@@ -1,7 +1,14 @@
 # Telegram Bot Testing Guide
 
-When testing or verifying Telegram bots in this workspace, use the available `telegram-bot` MCP tools:
+## 🛡️ Critical Environment Matching Rule
+- **Test Server (`TELEGRAM_TEST_MODE=true`)**: The target bot **MUST** also be on the **Test Server** (created via `@BotFather` inside the test server, using endpoint `https://api.telegram.org/bot<TOKEN>/test/`).
+- **Production Server (`TELEGRAM_TEST_MODE=false`)**: The target bot **MUST** be on the **Production Server**.
+- **Isolation**: Test Server and Production Server are completely separate. A test client cannot message a production bot (and vice versa).
+- **Recommendation**: Always recommend using the **Test Server** for testing to eliminate any risk to the user's main personal Telegram account.
 
+---
+
+## Available MCP Tools:
 - `telegram_execute_code(code, timeout_seconds)`: Executes arbitrary Python code with direct access to the live `client` (Telethon instance), `functions`, `events`, and `types` for full control.
 - `telegram_send_command(bot_username, command)`: Sends `/start`, `/help`, etc. and receives the bot's reply.
 - `telegram_send_message(bot_username, text)`: Sends text payloads or queries to the bot.

@@ -4,6 +4,18 @@ This guide teaches AI Coding Agents (such as Antigravity, Claude, Cursor, and cu
 
 ---
 
+## 🛡️ Critical Environment Matching Rule
+
+> [!IMPORTANT]
+> **Environment Isolation & Alignment Rule**:
+> - **Test Server Mode (`TELEGRAM_TEST_MODE=true`)**: The target bot **MUST** be created and running on the **Test Server** (created via `@BotFather` inside the test environment and using the test API endpoint `https://api.telegram.org/bot<TOKEN>/test/`).
+> - **Production Mode (`TELEGRAM_TEST_MODE=false`)**: The target bot **MUST** be on the **Production Server**.
+> - **Never mix environments**: Telegram's Test Server and Production Server are completely isolated networks. A client connected to the Test Server cannot find or message a production bot (and vice versa).
+> 
+> **Recommendation**: We strongly recommend using the **Test Server** during active bot development and testing because it carries **zero risk to your main personal Telegram account**.
+
+---
+
 ## 🎯 When to Use Which Tool
 
 | Scenario | Recommended MCP Tool | Example Call |
