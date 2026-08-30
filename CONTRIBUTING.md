@@ -1,45 +1,66 @@
 # Contributing to telegram-bot-mcp
 
-Thank you for your interest in contributing to `telegram-bot-mcp`. This project provides an MCP server for AI coding agents to test and interact with Telegram bots.
+Thank you for your interest in contributing to `telegram-bot-mcp`! This project provides a Model Context Protocol (MCP) server that empowers AI coding agents to autonomously test, interact with, click buttons on, and verify Telegram bots.
 
-## Development Setup
+---
 
-1. **Prerequisites**:
-   - Node.js (v20+ recommended)
-   - `pnpm` (preferred package manager)
+## 🛠️ Development Setup
 
-2. **Installation**:
+### 1. Prerequisites
+- **Python 3.10+**
+- `pip` / virtual environment
+
+### 2. Installation
+Clone the repository and install dependencies:
+```bash
+git clone https://github.com/Fire162/telegram-bot-mcp.git
+cd telegram-bot-mcp
+pip install -r requirements.txt
+```
+
+### 3. Environment Configuration
+1. Copy `.env.example` to `.env`:
    ```bash
-   pnpm install
+   cp .env.example .env
+   ```
+2. Obtain your `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` from [my.telegram.org](https://my.telegram.org) and add them to `.env`.
+3. Set `TELEGRAM_TEST_MODE=true` for testing on Telegram's Sandbox DC 2 (or `false` for production).
+4. Run the interactive login helper to generate your session string:
+   ```bash
+   python3 login.py
    ```
 
-3. **Environment Setup**:
-   - Copy `.env.example` to `.env`.
-   - Provide `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` from [my.telegram.org](https://my.telegram.org).
-   - Set `TELEGRAM_TEST_MODE=true` to test against Telegram's Test Server (DC 2) without using personal phone numbers.
-   - Run the auth helper to generate a session string:
-     ```bash
-     pnpm login
-     ```
+### 4. Running the MCP Server Locally
+```bash
+python3 server.py
+```
 
-4. **Building**:
+---
+
+## 📋 Code & Contribution Guidelines
+
+- **Architecture**: Keep MTProto interactions in `telegram_service.py` and MCP tool registrations in `server.py`.
+- **Typing & Clean Code**: Use Python type hints (`typing`) and clear docstrings for all MCP tools so AI agents can parse their JSON schemas accurately.
+- **Dependencies**: Keep dependencies minimal (`mcp`, `telethon`, `python-dotenv`). Do not add third-party libraries for trivial logic.
+- **Security First**: Never commit `.env`, session strings, or API credentials.
+- **Documentation**: If adding a new tool or capability, update:
+  1. `server.py` & `telegram_service.py`
+  2. `AGENT.md`
+  3. `docs/AGENT_GUIDE.md`
+  4. `.agents/plugins/telegram-bot/rules/AGENTS.md`
+  5. `CHANGELOG.md` with timestamps formatted in `Asia/Kolkata` timezone.
+
+---
+
+## 🚀 Submitting Pull Requests
+
+1. Create a descriptive feature branch:
    ```bash
-   pnpm build
+   git checkout -b feat/my-new-tool
    ```
-
-5. **Running Locally**:
+2. Verify code syntax and functionality:
    ```bash
-   pnpm dev
+   python3 -c "import py_compile; py_compile.compile('server.py', doraise=True); py_compile.compile('telegram_service.py', doraise=True)"
    ```
-
-## Code Guidelines
-
-- Write clean, maintainable TypeScript with strict type checking enabled.
-- Avoid unnecessary abstractions or adding unneeded dependencies.
-- Keep MCP tool schemas in `src/tools.ts` clear with descriptive parameter documentation for LLMs.
-- Document any workflow or architecture updates in `AGENT.md` and append notable updates to `CHANGELOG.md`.
-
-## Submitting Changes
-
-- Ensure TypeScript compiles cleanly with `pnpm build`.
-- Create concise, meaningful commits.
+3. Commit with concise, meaningful commit messages.
+4. Push your branch and open a Pull Request on GitHub.

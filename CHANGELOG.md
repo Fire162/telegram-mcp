@@ -1,12 +1,33 @@
-# Changelog
+# 📋 Changelog
 
-All notable changes to the `telegram-bot-mcp` project will be documented in this file.
+All notable changes to **`telegram-bot-mcp`** are documented in this file.
 
-The format is based on `[YYYY-MM-DD]{HH:mm:ss} Title: Description #optional extra notes` in the `Asia/Kolkata` timezone.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and includes timestamps in `Asia/Kolkata` (IST).
 
 ---
 
-[2026-08-30]{14:04:35} Initial Release: Implemented Model Context Protocol (MCP) server for automated Telegram bot testing and verification supporting MTProto, Test Server DC 2, command dispatch, and inline keyboard button interactions. #initial-release
-[2026-08-30]{14:58:00} Architecture Migration: Migrated MCP server core and client layer to Python 3 with Telethon and MCP SDK (MCPServer) for robust cross-platform MTProto and bot verification support. #python-telethon-migration
-[2026-08-30]{15:10:00} Feature Expansion: Added multi-step test suite runner (telegram_run_test_suite) with configurable sleep/wait actions, media upload/download, and inline query testing. #test-suite-runner
-[2026-08-30]{15:16:00} Code Execution Sandbox: Added telegram_execute_code tool allowing AI agents to run arbitrary asynchronous Python scripts with live Telethon client and MTProto access for maximum control. #code-execution-sandbox
+## [v1.2.0] — 2026-08-30 (15:40 IST)
+
+### 🚀 New Features
+* **Live Python Code Execution Sandbox (`telegram_execute_code`)**: Added direct async execution tool allowing AI agents to run custom Telethon and MTProto scripts on the authenticated client.
+* **Multi-Step Test Suite Runner (`telegram_run_test_suite`)**: Executes complete end-to-end regression workflows with assertions and configurable `sleep` intervals.
+* **Media & Document Verification**: Added `telegram_send_file` (upload photos, docs, audio) and `telegram_download_media` (inspect bot-generated media locally).
+* **Inline Query Mode (`telegram_inline_query`)**: Added simulation and result parsing for `@bot query` inline modes.
+
+### 🛡️ Security & Environment
+* **Environment Alignment Rule**: Enforced strict DC 2 Sandbox isolation for test accounts and production isolation for live accounts.
+* **Secret Sanitization**: Verified automated scans for `.env` exclusion and secret leak prevention.
+
+### 🧹 Refactoring & Cleanup
+* **Pure Python Migration**: Complete transition to Python 3 + Telethon + official MCP SDK (`MCPServer`).
+* **Housekeeping**: Removed deprecated TypeScript build artifacts (`src/`, `package.json`, `tsconfig.json`).
+* **Documentation**: Added dedicated [`docs/AGENT_GUIDE.md`](docs/AGENT_GUIDE.md) and modernized [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+---
+
+## [v1.0.0] — 2026-08-30 (14:04 IST)
+
+### 🚀 Initial Release
+* First release of the Telegram Bot Testing MCP Server.
+* Supported command dispatch (`/start`, `/help`), message sending, and inline keyboard button clicking via MTProto.
+* Integrated workspace discovery for Antigravity (`agy` CLI).
