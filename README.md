@@ -7,6 +7,8 @@
 
 A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as Antigravity, Claude Desktop, Cursor, and custom agent backends) to autonomously **interact with, test, click buttons on, and verify Telegram bots** end-to-end.
 
+> 📖 **AI Agents**: See the dedicated [**AI Agent Testing Guide**](docs/AGENT_GUIDE.md) for tool selection workflows, test suites, and best practices.
+
 ---
 
 ## 🌟 Features
