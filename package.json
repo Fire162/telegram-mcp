@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "login": "tsx src/auth-helper.ts"
+    "login": "tsx src/auth-helper.ts",
+    "login:py": "python3 login.py"
   },
   "keywords": [
     "mcp",
