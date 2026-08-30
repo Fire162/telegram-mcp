@@ -8,3 +8,4 @@ The format is based on `[YYYY-MM-DD]{HH:mm:ss} Title: Description #optional extr
 
 [2026-08-30]{14:04:35} Initial Release: Implemented Model Context Protocol (MCP) server for automated Telegram bot testing and verification supporting MTProto, Test Server DC 2, command dispatch, and inline keyboard button interactions. #initial-release
 [2026-08-30]{14:58:00} Architecture Migration: Migrated MCP server core and client layer to Python 3 with Telethon and MCP SDK (MCPServer) for robust cross-platform MTProto and bot verification support. #python-telethon-migration
+[2026-08-30]{15:10:00} Feature Expansion: Added multi-step test suite runner (telegram_run_test_suite) with configurable sleep/wait actions, media upload/download, and inline query testing. #test-suite-runner

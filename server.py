@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import asyncio
-from typing import Optional
+from typing import Optional, List, Dict, Any, Union
 from mcp.server.mcpserver import MCPServer
 from telegram_service import telegram_service
 
@@ -49,7 +49,7 @@ async def telegram_send_message(
     timeout_seconds: int = 10,
 ) -> str:
     """
-    Sends a text message or payload to the target bot.
+    Sends a text message or payload to the target bot or chat.
     """
     try:
         sent = await telegram_service.send_message(bot_username, text, reply_to_msg_id)
@@ -74,15 +74,74 @@ async def telegram_send_message(
 
 
 @mcp.tool()
-async def telegram_click_inline_button(
+async def telegram_send_file(
+    bot_username: str,
+    file_path: str,
+    caption: Optional[str] = None,
+    reply_to_msg_id: Optional[int] = None,
+    wait_response: bool = True,
+    timeout_seconds: int = 15,
+) -> str:
+    """
+    Sends a file, photo, document, voice note, or media to the bot and optionally waits for its response.
+    """
+    try:
+        sent = await telegram_service.send_file(
+            bot_username=bot_username,
+            file_path=file_path,
+            caption=caption,
+            reply_to_msg_id=reply_to_msg_id,
+        )
+        response = None
+        if wait_response:
+            response = await telegram_service.wait_for_reply(
+                bot_username,
+                after_message_id=sent["id"],
+                timeout_seconds=timeout_seconds,
+            )
+
+        return json.dumps(
+            {
+                "status": "success",
+                "sent_file": sent,
+                "bot_response": response or ("Timeout waiting for response" if wait_response else None),
+            },
+            indent=2,
+        )
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_download_media(
     bot_username: str,
     message_id: int,
+    output_dir: Optional[str] = None,
+) -> str:
+    """
+    Downloads media (photo, document, audio, chart) attached to a bot's message to inspect or verify its content.
+    """
+    try:
+        res = await telegram_service.download_media(
+            bot_username=bot_username,
+            message_id=message_id,
+            output_dir=output_dir,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_click_inline_button(
+    bot_username: str,
+    message_id: Optional[int] = None,
     button_text: Optional[str] = None,
     button_index: Optional[int] = None,
     wait_update: bool = True,
 ) -> str:
     """
-    Clicks an inline keyboard button on a specific bot message by label or index.
+    Clicks an inline keyboard button on a specific bot message (or latest message if omitted).
     """
     try:
         res = await telegram_service.click_inline_button(
@@ -96,8 +155,32 @@ async def telegram_click_inline_button(
             {
                 "status": "success",
                 "action": "clicked_button",
+                "message_id": res.get("message_id"),
                 "popup_alert": res.get("popup_alert"),
                 "updated_message": res.get("updated_message"),
+            },
+            indent=2,
+        )
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_inline_query(
+    bot_username: str,
+    query: str,
+) -> str:
+    """
+    Performs an inline query against the bot (e.g. '@my_bot search') and retrieves the list of returned inline results.
+    """
+    try:
+        results = await telegram_service.inline_query(bot_username, query)
+        return json.dumps(
+            {
+                "status": "success",
+                "query": query,
+                "count": len(results),
+                "results": results,
             },
             indent=2,
         )
@@ -150,12 +233,34 @@ async def telegram_send_and_verify(
 
 
 @mcp.tool()
+async def telegram_run_test_suite(
+    bot_username: str,
+    steps: List[Dict[str, Any]],
+) -> str:
+    """
+    Executes a multi-step test scenario against a bot with sleep/wait support in a single call.
+    Supported actions in steps:
+      - {"action": "send", "text": "/start"}
+      - {"action": "send_file", "file_path": "/path/to/test.png", "caption": "Optional"}
+      - {"action": "sleep", "seconds": 2.5}
+      - {"action": "assert_reply", "contains": "Welcome", "timeout_seconds": 10}
+      - {"action": "click_button", "text": "Settings", "message_id": 1234}
+      - {"action": "clear_chat"}
+    """
+    try:
+        report = await telegram_service.run_test_suite(bot_username, steps)
+        return json.dumps(report, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
 async def telegram_get_chat_history(
     bot_username: str,
     limit: int = 10,
 ) -> str:
     """
-    Fetches recent message history and inline keyboard buttons from the chat with the bot.
+    Fetches recent message history, media details, and inline keyboard buttons from the chat with the bot.
     """
     try:
         history = await telegram_service.get_chat_history(bot_username, limit=limit)

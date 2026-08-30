@@ -6,7 +6,7 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 ## 1. Project Overview
 
-`telegram-bot-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It uses Telegram's MTProto protocol to perform end-to-end actions such as sending commands, reading formatted responses, and clicking inline keyboard buttons.
+`telegram-bot-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It uses Telegram's MTProto protocol to perform end-to-end actions such as sending commands, reading formatted responses, uploading files, testing inline queries, and clicking inline keyboard buttons.
 
 ---
 
@@ -19,7 +19,10 @@ This guide documents the architecture, setup, development workflow, and conventi
 ├── login.py               # Interactive CLI helper for Telegram authentication
 ├── requirements.txt       # Python dependencies
 ├── .env.example           # Environment template
-└── AGENT.md               # AI agent reference documentation
+├── AGENT.md               # AI agent reference documentation
+├── CHANGELOG.md           # Project history in Asia/Kolkata timezone
+├── CONTRIBUTING.md        # Contribution guide
+└── LICENSE                # MIT License
 ```
 
 ---
@@ -44,41 +47,40 @@ The server exposes the following tools:
    - **Arguments**: `bot_username`, `text`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
    - **Usage**: Sends arbitrary text messages or payloads to the bot.
 
-3. `telegram_click_inline_button`
-   - **Arguments**: `bot_username`, `message_id`, `button_text?`, `button_index?`, `wait_update` (default: `True`)
+3. `telegram_send_file`
+   - **Arguments**: `bot_username`, `file_path`, `caption?`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `15`)
+   - **Usage**: Sends files, images, voice notes, or documents to the bot.
+
+4. `telegram_download_media`
+   - **Arguments**: `bot_username`, `message_id`, `output_dir?`
+   - **Usage**: Downloads media (photos, documents, audio) attached to a bot's message to inspect its content.
+
+5. `telegram_click_inline_button`
+   - **Arguments**: `bot_username`, `message_id?` (optional, latest if omitted), `button_text?`, `button_index?`, `wait_update` (default: `True`)
    - **Usage**: Triggers callback queries on inline keyboard buttons attached to a bot message.
 
-4. `telegram_send_and_verify`
+6. `telegram_inline_query`
+   - **Arguments**: `bot_username`, `query`
+   - **Usage**: Simulates typing `@bot query` in inline mode and inspects returned results.
+
+7. `telegram_send_and_verify`
    - **Arguments**: `bot_username`, `input_text`, `expected_contains`, `timeout_seconds` (default: `10`)
-   - **Usage**: Convenience assertion tool for end-to-end verification.
+   - **Usage**: Convenience assertion tool for single-step verification.
 
-5. `telegram_get_chat_history`
+8. `telegram_run_test_suite`
+   - **Arguments**: `bot_username`, `steps`
+   - **Usage**: Executes a multi-step scenario in a single tool call with step types:
+     - `send`: `{"action": "send", "text": "/start"}`
+     - `send_file`: `{"action": "send_file", "file_path": "test.png", "caption": "..."}`
+     - `sleep`: `{"action": "sleep", "seconds": 2.0}`
+     - `assert_reply`: `{"action": "assert_reply", "contains": "Welcome", "timeout_seconds": 10}`
+     - `click_button`: `{"action": "click_button", "text": "Settings", "message_id": 1234}`
+     - `clear_chat`: `{"action": "clear_chat"}`
+
+9. `telegram_get_chat_history`
    - **Arguments**: `bot_username`, `limit` (default: `10`)
-   - **Usage**: Retrieves recent messages and message metadata.
+   - **Usage**: Retrieves recent messages, media info, and button metadata.
 
-6. `telegram_clear_chat`
-   - **Arguments**: `bot_username`
-   - **Usage**: Deletes dialog history for clean testing states.
-
----
-
-## 5. Client MCP Configuration Example
-
-To register this server in an MCP host (such as Antigravity, Claude Desktop, or custom agent runner):
-
-```json
-{
-  "mcpServers": {
-    "telegram-bot": {
-      "command": "python3",
-      "args": ["/root/bot-mcp/server.py"],
-      "env": {
-        "TELEGRAM_API_ID": "your_api_id",
-        "TELEGRAM_API_HASH": "your_api_hash",
-        "TELEGRAM_SESSION": "your_session_string",
-        "TELEGRAM_TEST_MODE": "false"
-      }
-    }
-  }
-}
-```
+10. `telegram_clear_chat`
+    - **Arguments**: `bot_username`
+    - **Usage**: Deletes dialog history for clean testing states.
