@@ -1,5 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+downloads/
+*.session
+*.session-journal
+
+# Environment & Secrets
+.env
+.env.local
+
+# Node / Build artifacts
 node_modules/
 dist/
-.env
 *.log
 .DS_Store
