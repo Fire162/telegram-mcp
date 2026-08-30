@@ -17,24 +17,30 @@ const askQuestion = (query: string): Promise<string> =>
 
 async function main() {
   console.log("==========================================");
-  console.log("   Telegram MCP Session Generator         ");
+  console.log("   Telegram Bot MCP - Session Login       ");
   console.log("==========================================");
 
   let apiIdStr = process.env.TELEGRAM_API_ID;
   let apiHash = process.env.TELEGRAM_API_HASH;
-  const isTestMode = process.env.TELEGRAM_TEST_MODE !== "false";
 
   if (!apiIdStr) {
-    apiIdStr = await askQuestion("Enter your TELEGRAM_API_ID (from my.telegram.org): ");
+    apiIdStr = await askQuestion("Enter your TELEGRAM_API_ID: ");
   }
   if (!apiHash) {
-    apiHash = await askQuestion("Enter your TELEGRAM_API_HASH (from my.telegram.org): ");
+    apiHash = await askQuestion("Enter your TELEGRAM_API_HASH: ");
   }
 
+  const serverChoice = await askQuestion(
+    "Choose Telegram Network:\n  [1] Production Server (Real Telegram Network - Recommended)\n  [2] Test Server (DC 2 Sandbox)\nEnter 1 or 2 (default: 1): "
+  );
+
+  const isTestMode = serverChoice.trim() === "2";
   const apiId = parseInt(apiIdStr.trim(), 10);
   apiHash = apiHash.trim();
 
-  console.log(`\nConnecting to Telegram (${isTestMode ? "TEST Server (DC 2)" : "PRODUCTION Server"})...`);
+  console.log(
+    `\nConnecting to Telegram ${isTestMode ? "TEST Server (DC 2)" : "PRODUCTION Server"}...`
+  );
 
   const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
     connectionRetries: 5,
@@ -51,47 +57,45 @@ async function main() {
         );
         return answer.trim() || defaultNum;
       }
-      return await askQuestion("Enter your phone number (e.g. +1234567890): ");
+      return await askQuestion("Enter your phone number with country code (e.g. +919876543210): ");
     },
-    password: async () => await askQuestion("Enter your 2FA password (if enabled): "),
+    password: async () => await askQuestion("Enter your 2FA password (leave empty if not enabled): "),
     phoneCode: async () => {
       if (isTestMode) {
-        console.log("Using default test server OTP: 22222");
-        return "22222";
+        const code = await askQuestion("Enter Test OTP Code (default: 22222): ");
+        return code.trim() || "22222";
       }
-      return await askQuestion("Enter the verification code received via Telegram: ");
+      return await askQuestion("Enter the verification code received on Telegram: ");
     },
-    onError: (err) => console.error("Login Error:", err),
+    firstAndLastNames: async () => ["Agent", "Tester"],
+    onError: (err) => console.error("Login Error:", err?.message || err),
   });
 
   const sessionString = (client.session as StringSession).save();
-  console.log("\nAuthentication successful!");
-  console.log("\nYour Session String:\n" + sessionString + "\n");
+  console.log("\n==========================================");
+  console.log("🎉 Authentication successful!");
+  console.log("==========================================");
 
   const envPath = path.resolve(process.cwd(), ".env");
   let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf-8") : "";
 
-  if (envContent.includes("TELEGRAM_SESSION=")) {
-    envContent = envContent.replace(
-      /TELEGRAM_SESSION=.*/g,
-      `TELEGRAM_SESSION=${sessionString}`
-    );
-  } else {
-    envContent += `\nTELEGRAM_SESSION=${sessionString}`;
-  }
+  const updateOrAppend = (key: string, value: string) => {
+    const regex = new RegExp(`^${key}=.*$`, "m");
+    if (regex.test(envContent)) {
+      envContent = envContent.replace(regex, `${key}=${value}`);
+    } else {
+      envContent += `\n${key}=${value}`;
+    }
+  };
 
-  if (!envContent.includes("TELEGRAM_API_ID=")) {
-    envContent += `\nTELEGRAM_API_ID=${apiId}`;
-  }
-  if (!envContent.includes("TELEGRAM_API_HASH=")) {
-    envContent += `\nTELEGRAM_API_HASH=${apiHash}`;
-  }
-  if (!envContent.includes("TELEGRAM_TEST_MODE=")) {
-    envContent += `\nTELEGRAM_TEST_MODE=${isTestMode ? "true" : "false"}`;
-  }
+  updateOrAppend("TELEGRAM_API_ID", String(apiId));
+  updateOrAppend("TELEGRAM_API_HASH", apiHash);
+  updateOrAppend("TELEGRAM_SESSION", sessionString);
+  updateOrAppend("TELEGRAM_TEST_MODE", isTestMode ? "true" : "false");
 
   fs.writeFileSync(envPath, envContent.trim() + "\n");
-  console.log(`Saved session credentials to: ${envPath}`);
+  console.log(`\n✅ Saved session string into: ${envPath}`);
+  console.log("You can now start the MCP server using: pnpm start\n");
 
   rl.close();
   await client.disconnect();
