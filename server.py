@@ -9,6 +9,29 @@ mcp = MCPServer("telegram-bot-mcp")
 
 
 @mcp.tool()
+async def telegram_execute_code(
+    code: str,
+    timeout_seconds: int = 30,
+) -> str:
+    """
+    Executes arbitrary custom asynchronous Python code with direct access to the live Telethon client and MTProto API.
+    Available pre-injected variables:
+      - `client`: Authenticated Telethon TelegramClient instance (e.g. `await client.get_dialogs()`, `await client(...)`)
+      - `service` / `telegram_service`: The TelegramService instance
+      - `events`: telethon.events
+      - `functions`: telethon.tl.functions (raw MTProto functions)
+      - `types`: telethon.tl.types (raw MTProto types)
+      - `asyncio`, `json`, `os`, `time`
+    Stdout/stderr and return values are captured and returned in the JSON result.
+    """
+    try:
+        res = await telegram_service.execute_code(code, timeout_seconds=timeout_seconds)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"success": False, "error": str(e)}, indent=2)
+
+
+@mcp.tool()
 async def telegram_send_command(
     bot_username: str,
     command: str,

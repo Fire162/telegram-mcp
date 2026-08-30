@@ -2,6 +2,7 @@
 
 When testing or verifying Telegram bots in this workspace, use the available `telegram-bot` MCP tools:
 
+- `telegram_execute_code(code, timeout_seconds)`: Executes arbitrary Python code with direct access to the live `client` (Telethon instance), `functions`, `events`, and `types` for full control.
 - `telegram_send_command(bot_username, command)`: Sends `/start`, `/help`, etc. and receives the bot's reply.
 - `telegram_send_message(bot_username, text)`: Sends text payloads or queries to the bot.
 - `telegram_send_file(bot_username, file_path, caption)`: Sends photos, documents, audio, or test files to the bot.

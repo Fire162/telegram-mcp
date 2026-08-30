@@ -1,9 +1,13 @@
 import os
+import io
+import sys
 import json
-import asyncio
 import time
+import asyncio
+import traceback
 from typing import Optional, List, Dict, Any, Union
-from telethon import TelegramClient, custom
+from telethon import TelegramClient, custom, events
+from telethon.tl import functions, types
 from telethon.sessions import StringSession
 from dotenv import load_dotenv
 
@@ -201,7 +205,6 @@ class TelegramService:
             if msgs and msgs[0]:
                 msg = msgs[0]
         else:
-            # Get latest message from bot with buttons
             messages = await client.get_messages(entity, limit=5)
             for m in messages:
                 if m.buttons:
@@ -380,6 +383,65 @@ class TelegramService:
             "duration_seconds": round(time.time() - start_time, 2),
             "steps_results": results,
         }
+
+    async def execute_code(self, code: str, timeout_seconds: int = 30) -> Dict[str, Any]:
+        """
+        Executes arbitrary Python code asynchronously with live Telethon client and MTProto access.
+        """
+        client = await self.get_client()
+
+        stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
+
+        lines = code.strip().splitlines()
+        indent_code = "\n".join("    " + line for line in lines)
+        wrapper = f"""
+async def __agent_exec__(client, telegram_service, service, events, functions, types, asyncio, json, os, time):
+{indent_code}
+"""
+        local_ns = {}
+        global_ns = {
+            "client": client,
+            "telegram_service": self,
+            "service": self,
+            "events": events,
+            "functions": functions,
+            "types": types,
+            "asyncio": asyncio,
+            "json": json,
+            "os": os,
+            "time": time,
+        }
+
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = stdout_capture, stderr_capture
+
+        start_time = time.time()
+        try:
+            exec(wrapper, global_ns, local_ns)
+            fn = local_ns["__agent_exec__"]
+            result = await asyncio.wait_for(
+                fn(client, self, self, events, functions, types, asyncio, json, os, time),
+                timeout=timeout_seconds
+            )
+            return {
+                "success": True,
+                "stdout": stdout_capture.getvalue(),
+                "stderr": stderr_capture.getvalue(),
+                "return_value": repr(result) if result is not None else None,
+                "duration_seconds": round(time.time() - start_time, 3),
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "stdout": stdout_capture.getvalue(),
+                "stderr": stderr_capture.getvalue(),
+                "duration_seconds": round(time.time() - start_time, 3),
+            }
+        finally:
+            sys.stdout, sys.stderr = old_stdout, old_stderr
 
 
 telegram_service = TelegramService()

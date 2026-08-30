@@ -6,7 +6,7 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 ## 1. Project Overview
 
-`telegram-bot-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It uses Telegram's MTProto protocol to perform end-to-end actions such as sending commands, reading formatted responses, uploading files, testing inline queries, and clicking inline keyboard buttons.
+`telegram-bot-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It provides both high-level testing tools and a direct Python code execution sandbox (`telegram_execute_code`) for arbitrary MTProto automation.
 
 ---
 
@@ -39,48 +39,52 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 The server exposes the following tools:
 
-1. `telegram_send_command`
-   - **Arguments**: `bot_username`, `command`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
-   - **Usage**: Sends a `/command` to the bot and returns the sent message and bot's response with any inline keyboard buttons.
+1. `telegram_execute_code` *(Full Control Sandbox)*
+   - **Arguments**: `code` (string), `timeout_seconds` (default: `30`)
+   - **Environment Injected**:
+     - `client`: Live authenticated `Telethon.TelegramClient` instance (supports raw MTProto functions, event listeners, updates, etc.)
+     - `service` / `telegram_service`: `TelegramService` instance
+     - `events`: `telethon.events`
+     - `functions`, `types`: `telethon.tl.functions`, `telethon.tl.types`
+     - `asyncio`, `json`, `os`, `time`
+   - **Returns**: Captured `stdout`, `stderr`, `return_value`, `duration_seconds`, and error stack traces.
 
-2. `telegram_send_message`
+2. `telegram_send_command`
+   - **Arguments**: `bot_username`, `command`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
+   - **Usage**: Sends a `/command` to the bot and returns the reply with inline keyboard buttons.
+
+3. `telegram_send_message`
    - **Arguments**: `bot_username`, `text`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
    - **Usage**: Sends arbitrary text messages or payloads to the bot.
 
-3. `telegram_send_file`
+4. `telegram_send_file`
    - **Arguments**: `bot_username`, `file_path`, `caption?`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `15`)
    - **Usage**: Sends files, images, voice notes, or documents to the bot.
 
-4. `telegram_download_media`
+5. `telegram_download_media`
    - **Arguments**: `bot_username`, `message_id`, `output_dir?`
-   - **Usage**: Downloads media (photos, documents, audio) attached to a bot's message to inspect its content.
+   - **Usage**: Downloads media (photos, documents, audio) attached to a bot's message.
 
-5. `telegram_click_inline_button`
-   - **Arguments**: `bot_username`, `message_id?` (optional, latest if omitted), `button_text?`, `button_index?`, `wait_update` (default: `True`)
+6. `telegram_click_inline_button`
+   - **Arguments**: `bot_username`, `message_id?`, `button_text?`, `button_index?`, `wait_update` (default: `True`)
    - **Usage**: Triggers callback queries on inline keyboard buttons attached to a bot message.
 
-6. `telegram_inline_query`
+7. `telegram_inline_query`
    - **Arguments**: `bot_username`, `query`
    - **Usage**: Simulates typing `@bot query` in inline mode and inspects returned results.
 
-7. `telegram_send_and_verify`
+8. `telegram_send_and_verify`
    - **Arguments**: `bot_username`, `input_text`, `expected_contains`, `timeout_seconds` (default: `10`)
-   - **Usage**: Convenience assertion tool for single-step verification.
+   - **Usage**: Single-step assertion check.
 
-8. `telegram_run_test_suite`
+9. `telegram_run_test_suite`
    - **Arguments**: `bot_username`, `steps`
-   - **Usage**: Executes a multi-step scenario in a single tool call with step types:
-     - `send`: `{"action": "send", "text": "/start"}`
-     - `send_file`: `{"action": "send_file", "file_path": "test.png", "caption": "..."}`
-     - `sleep`: `{"action": "sleep", "seconds": 2.0}`
-     - `assert_reply`: `{"action": "assert_reply", "contains": "Welcome", "timeout_seconds": 10}`
-     - `click_button`: `{"action": "click_button", "text": "Settings", "message_id": 1234}`
-     - `clear_chat`: `{"action": "clear_chat"}`
+   - **Usage**: Executes multi-step test workflows with `sleep`, `assert_reply`, `send_file`, and `click_button`.
 
-9. `telegram_get_chat_history`
-   - **Arguments**: `bot_username`, `limit` (default: `10`)
-   - **Usage**: Retrieves recent messages, media info, and button metadata.
+10. `telegram_get_chat_history`
+    - **Arguments**: `bot_username`, `limit` (default: `10`)
+    - **Usage**: Retrieves recent messages, media info, and button metadata.
 
-10. `telegram_clear_chat`
+11. `telegram_clear_chat`
     - **Arguments**: `bot_username`
     - **Usage**: Deletes dialog history for clean testing states.
