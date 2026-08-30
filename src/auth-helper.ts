@@ -17,7 +17,7 @@ const askQuestion = (query: string): Promise<string> =>
 
 async function main() {
   console.log("\n=======================================================");
-  console.log("   Telegram Bot MCP - One-Time Account Login           ");
+  console.log("   Telegram Bot MCP - Account Login Helper             ");
   console.log("=======================================================\n");
 
   const apiIdStr = process.env.TELEGRAM_API_ID;
@@ -29,28 +29,45 @@ async function main() {
   }
 
   const apiId = parseInt(apiIdStr.trim(), 10);
-  const client = new TelegramClient(new StringSession(""), apiId, apiHash.trim(), {
+  const apiHashClean = apiHash.trim();
+
+  const choice = await askQuestion(
+    "Select Environment:\n  [1] Production Account (Standard Telegram App)\n  [2] Beta / Test Server Account (Telegram Beta / Test DC)\nChoice (1 or 2, default: 2): "
+  );
+
+  const isTestServer = choice.trim() !== "1";
+
+  console.log(`\nConnecting to Telegram ${isTestServer ? "TEST / BETA Server (DC 2)" : "PRODUCTION Server"}...`);
+
+  const client = new TelegramClient(new StringSession(""), apiId, apiHashClean, {
     connectionRetries: 5,
     useIPV6: false,
-    testServers: false,
+    testServers: isTestServer,
   });
-
-  console.log("Connecting to Telegram Network...\n");
 
   await client.start({
     phoneNumber: async () => {
-      const phone = await askQuestion("📱 Enter your phone number with country code (e.g. +919876543210): ");
+      const phone = await askQuestion(
+        isTestServer
+          ? "📱 Enter your Beta / Test phone number (e.g. 9996621234 or +...): "
+          : "📱 Enter your phone number with country code (e.g. +91XXXXXXXXXX): "
+      );
       return phone.trim();
     },
     password: async () => {
-      const pw = await askQuestion("🔑 Enter 2FA Password (press Enter if you don't have one): ");
+      const pw = await askQuestion("🔑 Enter 2FA Password (leave empty & press Enter if none): ");
       return pw.trim();
     },
     phoneCode: async () => {
-      const code = await askQuestion("📩 Enter the code received in your Telegram App: ");
+      const code = await askQuestion(
+        isTestServer
+          ? "📩 Enter the verification code (usually 22222 or code from Beta app): "
+          : "📩 Enter the code received in your Telegram App: "
+      );
       return code.trim();
     },
-    onError: (err) => console.error("⚠️ Error:", err?.message || err),
+    firstAndLastNames: async () => ["Agent", "Tester"],
+    onError: (err) => console.error("⚠️ Login warning:", err?.message || err),
   });
 
   const sessionString = (client.session as StringSession).save();
@@ -73,11 +90,12 @@ async function main() {
   };
 
   updateOrAppend("TELEGRAM_SESSION", sessionString);
-  updateOrAppend("TELEGRAM_TEST_MODE", "false");
+  updateOrAppend("TELEGRAM_TEST_MODE", isTestServer ? "true" : "false");
 
   fs.writeFileSync(envPath, envContent.trim() + "\n");
-  console.log(`✅ Session saved to .env!`);
-  console.log("🚀 You can now start the MCP server using: pnpm start\n");
+  console.log(`✅ Session string saved to: ${envPath}`);
+  console.log(`✅ TELEGRAM_TEST_MODE set to: ${isTestServer ? "true" : "false"}`);
+  console.log("\n🚀 You can now start the MCP server using: pnpm start\n");
 
   rl.close();
   await client.disconnect();
