@@ -308,3 +308,11 @@ The server exposes the following tools:
 60. `telegram_delete_dialog_filter`
     - **Arguments**: `filter_id`
     - **Usage**: Deletes a Telegram chat folder/filter by folder ID.
+
+61. `telegram_get_admin_log`
+    - **Arguments**: `chat_identifier`, `limit?` (default: `20`), `query?`, `join?`, `leave?`, `invite?`, `ban?`, `unban?`, `kick?`, `unkick?`, `promote?`, `demote?`, `info?`, `settings?`, `pinned?`, `edit?`, `delete?`
+    - **Usage**: Inspects the administrative audit event log of a supergroup or broadcast channel (kicks, bans, permissions, title/about edits, message deletions).
+
+62. `telegram_edit_chat_info`
+    - **Arguments**: `chat_identifier`, `title?`, `about?`
+    - **Usage**: Programmatically updates the title or description/about text of a group, supergroup, or broadcast channel.
