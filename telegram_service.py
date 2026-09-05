@@ -138,15 +138,23 @@ class TelegramService:
         self.client = None
         self._release_process_lock()
 
-    def _clean_bot_username(self, username: str) -> str:
+    def _clean_bot_username(self, username: Union[str, int]) -> Union[str, int]:
+        if isinstance(username, int):
+            return username
         target = (username or os.environ.get("DEFAULT_TARGET_BOT", "")).strip()
         if not target:
-            raise ValueError("Bot username was not provided and DEFAULT_TARGET_BOT is not configured.")
+            raise ValueError("Target was not provided and DEFAULT_TARGET_BOT is not configured.")
         if "t.me/" in target:
             target = target.split("t.me/")[-1].strip()
         if target.lower() == "me":
             return "me"
-        return target if (target.startswith("@") or target.startswith("-") or target.isdigit()) else f"@{target}"
+        if target.startswith("-100") and target[4:].isdigit():
+            return int(target)
+        if target.startswith("-") and target[1:].isdigit():
+            return int(target)
+        if target.isdigit():
+            return int(target)
+        return target if target.startswith("@") else f"@{target}"
 
     @staticmethod
     def _mask_phone(phone: Optional[str]) -> Optional[str]:
@@ -318,6 +326,7 @@ class TelegramService:
                 types.PollAnswer(text=types.TextWithEntities(text=opt, entities=[]), option=bytes([i]))
                 for i, opt in enumerate(options)
             ],
+            hash=0,
             quiz=is_quiz,
         )
         correct_answers = [bytes([correct_option_id])] if is_quiz and correct_option_id is not None else None

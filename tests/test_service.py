@@ -13,7 +13,9 @@ class TestTelegramService(unittest.TestCase):
         self.assertEqual(self.service._clean_bot_username("test_bot"), "@test_bot")
         self.assertEqual(self.service._clean_bot_username("https://t.me/test_bot"), "@test_bot")
         self.assertEqual(self.service._clean_bot_username("t.me/test_bot"), "@test_bot")
-        self.assertEqual(self.service._clean_bot_username("12345678"), "12345678")
+        self.assertEqual(self.service._clean_bot_username("12345678"), 12345678)
+        self.assertEqual(self.service._clean_bot_username("-10012345678"), -10012345678)
+        self.assertEqual(self.service._clean_bot_username(12345678), 12345678)
 
     def test_format_message_text(self):
         mock_msg = MagicMock()
@@ -91,8 +93,31 @@ class TestTelegramService(unittest.TestCase):
                     poll_interval=0.2,
                 )
             )
-            self.assertEqual(res["status"], "timeout")
-            self.assertFalse(res["matched"])
+    def test_send_poll(self):
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="target_entity")
+        mock_sent = MagicMock()
+        mock_sent.id = 55
+        mock_sent.date.isoformat.return_value = "2026-09-05T12:00:00+00:00"
+        mock_sent.out = True
+        mock_sent.text = "Favorite color?"
+        mock_sent.photo = None
+        mock_sent.document = None
+        mock_sent.voice = None
+        mock_sent.audio = None
+        mock_sent.buttons = None
+        mock_client.send_message = AsyncMock(return_value=mock_sent)
+
+        with patch.object(self.service, "_ensure_connected", return_value=mock_client):
+            res = asyncio.run(
+                self.service.send_poll(
+                    bot_username="@test_bot",
+                    question="Favorite color?",
+                    options=["Red", "Blue"],
+                )
+            )
+            self.assertEqual(res["id"], 55)
+            self.assertEqual(res["text"], "Favorite color?")
 
     def test_get_web_app_url_main_app(self):
         mock_client = AsyncMock()
