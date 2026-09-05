@@ -686,10 +686,15 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         if bot_info and hasattr(bot_info, "commands") and bot_info.commands:
             commands = [{"command": c.command, "description": c.description} for c in bot_info.commands]
 
+        first_name = getattr(user, "first_name", "") or ""
+        last_name = getattr(user, "last_name", "") or ""
+        name = f"{first_name} {last_name}".strip() or first_name
+
         return {
             "id": getattr(user, "id", None),
-            "first_name": getattr(user, "first_name", None),
-            "last_name": getattr(user, "last_name", None),
+            "name": name,
+            "first_name": first_name,
+            "last_name": last_name,
             "username": getattr(user, "username", None),
             "is_bot": getattr(user, "bot", True),
             "about": getattr(full.full_user, "about", None),
@@ -737,6 +742,7 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         messages = await client.get_messages(entity, min_id=min_id, max_id=max_id)
         return {
             "target_message_id": message_id,
+            "count": len(messages),
             "messages": [self._format_message(m) for m in messages],
         }
 
