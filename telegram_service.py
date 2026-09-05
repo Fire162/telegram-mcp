@@ -3,6 +3,7 @@ import io
 import sys
 import json
 import time
+import fcntl
 import asyncio
 import traceback
 from typing import Optional, List, Dict, Any, Union
@@ -13,16 +14,54 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+LOCKFILE_PATH = "/tmp/telegram-mcp.lock"
+
 
 class TelegramService:
     def __init__(self):
         self.client: Optional[TelegramClient] = None
         self._lock = asyncio.Lock()
+        self._lock_fd: Optional[int] = None
+
+    def _acquire_process_lock(self):
+        if self._lock_fd is not None:
+            return
+
+        fd = os.open(LOCKFILE_PATH, os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            raise RuntimeError(
+                "Another telegram-mcp instance is already running and using this session. "
+                "Kill the other process first or it will destroy the session. "
+                f"Check: ps aux | grep server.py / lsof {LOCKFILE_PATH}"
+            )
+
+        os.write(fd, f"pid={os.getpid()}\n".encode())
+        os.fsync(fd)
+        self._lock_fd = fd
+
+    def _release_process_lock(self):
+        if self._lock_fd is not None:
+            try:
+                fcntl.flock(self._lock_fd, fcntl.LOCK_UN)
+                os.close(self._lock_fd)
+            except OSError:
+                pass
+            self._lock_fd = None
+
+            try:
+                os.unlink(LOCKFILE_PATH)
+            except OSError:
+                pass
 
     async def get_client(self) -> TelegramClient:
         async with self._lock:
             if self.client and self.client.is_connected():
                 return self.client
+
+            self._acquire_process_lock()
 
             api_id_str = os.environ.get("TELEGRAM_API_ID")
             api_hash = os.environ.get("TELEGRAM_API_HASH")
@@ -46,6 +85,40 @@ class TelegramService:
                 )
 
             return self.client
+
+    async def _ensure_connected(self) -> TelegramClient:
+        try:
+            return await self.get_client()
+        except (ConnectionError, OSError) as e:
+            if "AuthKeyDuplicated" in str(e) or "authorization key" in str(e).lower():
+                raise RuntimeError(
+                    "Session permanently revoked by Telegram (AuthKeyDuplicatedError). "
+                    "This happens when two processes use the same session simultaneously. "
+                    "You must re-login: cd /root/bot-mcp && python3 login.py"
+                ) from e
+            self.client = None
+            try:
+                return await self.get_client()
+            except Exception:
+                raise
+        except Exception as e:
+            err_str = str(e)
+            if "AuthKeyDuplicated" in err_str or "authorization key" in err_str.lower():
+                raise RuntimeError(
+                    "Session permanently revoked by Telegram (AuthKeyDuplicatedError). "
+                    "This happens when two processes use the same session simultaneously. "
+                    "You must re-login: cd /root/bot-mcp && python3 login.py"
+                ) from e
+            raise
+
+    async def disconnect(self):
+        if self.client and self.client.is_connected():
+            try:
+                await self.client.disconnect()
+            except Exception:
+                pass
+        self.client = None
+        self._release_process_lock()
 
     def _clean_bot_username(self, username: str) -> str:
         target = username or os.environ.get("DEFAULT_TARGET_BOT", "")
@@ -105,7 +178,7 @@ class TelegramService:
         text: str,
         reply_to_msg_id: Optional[int] = None,
     ) -> Dict[str, Any]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
 
         sent = await client.send_message(
@@ -125,7 +198,7 @@ class TelegramService:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
 
         sent = await client.send_file(
@@ -142,7 +215,7 @@ class TelegramService:
         message_id: int,
         output_dir: Optional[str] = None,
     ) -> Dict[str, Any]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
 
@@ -173,7 +246,7 @@ class TelegramService:
         after_message_id: Optional[int] = None,
         timeout_seconds: int = 10,
     ) -> Optional[Dict[str, Any]]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
 
@@ -195,7 +268,7 @@ class TelegramService:
         button_index: Optional[int] = None,
         wait_update: bool = True,
     ) -> Dict[str, Any]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
 
@@ -245,7 +318,7 @@ class TelegramService:
         bot_username: str,
         query: str,
     ) -> List[Dict[str, Any]]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
 
         results = await client.inline_query(target, query)
@@ -266,7 +339,7 @@ class TelegramService:
         bot_username: str,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
 
@@ -274,7 +347,7 @@ class TelegramService:
         return [self._format_message(m) for m in messages]
 
     async def clear_chat(self, bot_username: str) -> bool:
-        client = await self.get_client()
+        client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
 
@@ -388,7 +461,7 @@ class TelegramService:
         """
         Executes arbitrary Python code asynchronously with live Telethon client and MTProto access.
         """
-        client = await self.get_client()
+        client = await self._ensure_connected()
 
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()

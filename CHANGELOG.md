@@ -1,8 +1,25 @@
 # 📋 Changelog
 
-All notable changes to **`telegram-bot-mcp`** are documented in this file.
+All notable changes to **`telegram-mcp`** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and includes timestamps in `Asia/Kolkata` (IST).
+
+---
+
+## [v1.3.0] — 2026-09-05 (17:45 IST)
+
+### 🛡️ Session Protection
+* **Process-level file lock (`fcntl`)**: Prevents multiple `server.py` instances from connecting with the same Telegram session simultaneously, which previously caused Telegram to permanently revoke the auth key (`AuthKeyDuplicatedError`).
+* **Clear error on dead sessions**: Detects `AuthKeyDuplicatedError` and returns an actionable message explaining the session is permanently revoked and how to re-login, instead of a cryptic Telethon traceback.
+
+### 🔄 Connection Resilience
+* **Auto-reconnect on transient errors**: Added `_ensure_connected()` wrapper that retries once on `ConnectionError`/`OSError` before giving up, handling temporary network drops gracefully.
+* **Non-crashing server startup**: The server starts up gracefully even when unauthenticated or when the session is invalid, ensuring MCP controls (restart/disable) remain responsive in UI clients.
+* **Proper lifecycle management**: Added MCPServer `lifespan` context manager that cleanly disconnects the Telethon client on shutdown.
+* **Graceful shutdown**: Added `disconnect()` method and signal handlers (`SIGTERM`/`SIGINT`) ensuring the Telegram connection and process lock are always released cleanly.
+
+### 🔑 Diagnostics
+* **Diagnostics Tool (`telegram_status`)**: Inspect connection state, auth validity, and configuration without crashing.
 
 ---
 

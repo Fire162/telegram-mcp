@@ -1,11 +1,87 @@
 #!/usr/bin/env python3
 import json
+import signal
+import sys
 import asyncio
 from typing import Optional, List, Dict, Any, Union
+from contextlib import asynccontextmanager
+
 from mcp.server.mcpserver import MCPServer
 from telegram_service import telegram_service
 
-mcp = MCPServer("telegram-bot-mcp")
+
+@asynccontextmanager
+async def lifespan(server):
+    try:
+        await telegram_service.get_client()
+    except Exception as e:
+        print(f"[telegram-mcp] Startup warning: {e}", file=sys.stderr)
+        print("[telegram-mcp] Server is running but Telegram is not connected.", file=sys.stderr)
+        print("[telegram-mcp] Use the telegram_status tool to check or run: python3 /root/bot-mcp/login.py", file=sys.stderr)
+    try:
+        yield {}
+    finally:
+        await telegram_service.disconnect()
+
+
+MCP_INSTRUCTIONS = """Telegram MCP Server (Telethon + MTProto).
+
+If tools return auth errors, the session needs to be regenerated:
+1. Run: cd /root/bot-mcp && python3 login.py
+2. Restart the MCP server.
+
+Use telegram_status to check the current connection state before running other tools."""
+
+mcp = MCPServer("telegram-mcp", instructions=MCP_INSTRUCTIONS, lifespan=lifespan)
+
+
+@mcp.tool()
+async def telegram_status() -> str:
+    """
+    Checks the current Telegram connection state, session validity, and environment configuration.
+    Call this first to diagnose auth issues before using other tools.
+    """
+    import os
+    status = {
+        "test_mode": os.environ.get("TELEGRAM_TEST_MODE", "false"),
+        "api_id_set": bool(os.environ.get("TELEGRAM_API_ID")),
+        "api_hash_set": bool(os.environ.get("TELEGRAM_API_HASH")),
+        "session_set": bool(os.environ.get("TELEGRAM_SESSION")),
+        "default_bot": os.environ.get("DEFAULT_TARGET_BOT", "(not set)"),
+    }
+
+    if not status["session_set"]:
+        status["connected"] = False
+        status["error"] = "No TELEGRAM_SESSION in .env. Run: cd /root/bot-mcp && python3 login.py"
+        return json.dumps(status, indent=2)
+
+    try:
+        client = await telegram_service.get_client()
+        me = await client.get_me()
+        status["connected"] = True
+        phone_masked = None
+        if me.phone:
+            p = str(me.phone)
+            phone_masked = f"+{p[:2]} {'*' * (len(p) - 6)} {p[-4:]}" if len(p) > 6 else ("*" * len(p))
+
+        status["user"] = {
+            "id": me.id,
+            "first_name": me.first_name,
+            "last_name": me.last_name,
+            "username": me.username,
+            "phone": phone_masked,
+        }
+    except Exception as e:
+        status["connected"] = False
+        err = str(e)
+        if "AuthKeyDuplicated" in err or "authorization key" in err.lower():
+            status["error"] = "Session permanently revoked (AuthKeyDuplicatedError). Run: cd /root/bot-mcp && python3 login.py"
+        elif "not authorized" in err.lower():
+            status["error"] = "Session expired or invalid. Run: cd /root/bot-mcp && python3 login.py"
+        else:
+            status["error"] = err
+
+    return json.dumps(status, indent=2)
 
 
 @mcp.tool()
@@ -320,4 +396,10 @@ async def telegram_clear_chat(
 
 
 if __name__ == "__main__":
+    def handle_signal(*args):
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+
     mcp.run()

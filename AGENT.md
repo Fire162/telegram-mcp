@@ -1,12 +1,15 @@
-# AGENT.md - Telegram Bot Testing MCP Server Guide (Python + Telethon)
+# AGENT.md - Telegram MCP Server Guide (Python + Telethon)
 
-This guide documents the architecture, setup, development workflow, and conventions for the `telegram-bot-mcp` project.
+> [!WARNING]
+> **Disclaimer**: This project is an independent open-source tool and is **not affiliated with, authorized, maintained, sponsored, or endorsed by Telegram FZ-LLC, Telegram Messenger Inc., or any of their affiliates**. "Telegram" is a registered trademark of its respective owners.
+
+This guide documents the architecture, setup, development workflow, and conventions for the `telegram-mcp` project.
 
 ---
 
 ## 1. Project Overview
 
-`telegram-bot-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It provides both high-level testing tools and a direct Python code execution sandbox (`telegram_execute_code`) for arbitrary MTProto automation.
+`telegram-mcp` is a Model Context Protocol (MCP) server built with Python (`mcp` / `MCPServer`) and `Telethon`. It enables AI coding agents to interact with, test, and verify Telegram bots. It provides both high-level testing tools and a direct Python code execution sandbox (`telegram_execute_code`) for arbitrary MTProto automation.
 
 ---
 
@@ -44,11 +47,25 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 ---
 
+## 3.1 Session Safety
+
+The server uses a process-level file lock (`/tmp/telegram-mcp.lock`) to prevent multiple instances from connecting with the same Telegram session simultaneously. If a second instance starts, it will fail immediately with a clear error instead of destroying the session.
+
+- **Never run two `server.py` processes at the same time.** The lock prevents it, but be aware.
+- If you see `AuthKeyDuplicatedError`, the session is permanently dead. Re-login with `python3 login.py`.
+- The server validates the session eagerly on startup and disconnects cleanly on shutdown.
+
+---
+
 ## 4. MCP Tools Reference
 
 The server exposes the following tools:
 
-1. `telegram_execute_code` *(Full Control Sandbox)*
+1. `telegram_status`
+   - **Arguments**: None
+   - **Usage**: Checks connection health, configuration flags, and active user metadata without throwing errors.
+
+2. `telegram_execute_code` *(Full Control Sandbox)*
    - **Arguments**: `code` (string), `timeout_seconds` (default: `30`)
    - **Environment Injected**:
      - `client`: Live authenticated `Telethon.TelegramClient` instance (supports raw MTProto functions, event listeners, updates, etc.)

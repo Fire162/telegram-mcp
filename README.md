@@ -1,9 +1,12 @@
-# Telegram Bot Testing & Verification MCP Server 🤖🧪
+# Telegram MCP 🤖🧪
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP](https://img.shields.io/badge/MCP-Protocol-purple.svg)](https://modelcontextprotocol.io)
 [![Telethon](https://img.shields.io/badge/Telethon-MTProto-blue.svg)](https://github.com/LonamiWebs/Telethon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> [!WARNING]
+> **Disclaimer**: This project is an independent open-source tool and is **not affiliated with, authorized, maintained, sponsored, or endorsed by Telegram FZ-LLC, Telegram Messenger Inc., or any of their affiliates**. "Telegram" is a registered trademark of its respective owners.
 
 A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as Antigravity, Claude Desktop, Cursor, and custom agent backends) to autonomously **interact with, test, click buttons on, and verify Telegram bots** end-to-end.
 
@@ -99,6 +102,7 @@ Add to your `claude_desktop_config.json`:
 
 | Tool Name | Parameters | Purpose |
 | :--- | :--- | :--- |
+| `telegram_status` | _None_ | Checks connection health, environment, and user info with masked phone for privacy. |
 | `telegram_send_command` | `bot_username`, `command`, `wait_response?`, `timeout_seconds?` | Sends a command and waits for reply. |
 | `telegram_send_message` | `bot_username`, `text`, `reply_to_msg_id?`, `wait_response?` | Sends text payloads or queries. |
 | `telegram_click_inline_button` | `bot_username`, `message_id?`, `button_text?`, `button_index?` | Clicks inline buttons and returns updated message state. |
