@@ -124,6 +124,17 @@ Add to your `claude_desktop_config.json`:
 | `telegram_unpin_message` | `bot_username`, `message_id?` | Unpins a specific message, or unpins all messages in the chat. |
 | `telegram_get_message_context` | `bot_username`, `message_id`, `limit_before?`, `limit_after?` | Fetches preceding and succeeding messages around a message ID. |
 | `telegram_send_album` | `bot_username`, `file_paths`, `caption?` | Sends multiple photos/files as a grouped album in one message. |
+| `telegram_save_draft` | `bot_username`, `text`, `reply_to_msg_id?` | Saves an uncommitted draft directly into the Telegram chat input box. |
+| `telegram_schedule_message` | `bot_username`, `text`, `schedule_in_seconds?`, `schedule_date_iso?` | Schedules a message for future automated delivery. |
+| `telegram_get_scheduled_messages` | `bot_username` | Retrieves all pending scheduled messages queued in a chat. |
+| `telegram_delete_scheduled_messages` | `bot_username`, `message_ids` | Cancels and deletes scheduled messages before delivery. |
+| `telegram_get_pinned_messages` | `bot_username`, `limit?` | Fetches pinned messages directly from a chat, bot, or channel. |
+| `telegram_mute_chat` | `bot_username`, `duration_seconds?` | Mutes notifications for a specified duration or permanently. |
+| `telegram_unmute_chat` | `bot_username` | Unmutes notifications for a chat or channel. |
+| `telegram_export_chat` | `bot_username`, `limit?`, `format?` | Exports conversation history as clean Markdown or JSON for AI summarization. |
+| `telegram_get_chat_members` | `bot_username`, `limit?` | Lists group/channel participants with names, IDs, and bot flags. |
+| `telegram_get_contacts` | `query?`, `limit?` | Retrieves saved Telegram contacts with privacy-masked phone numbers. |
+| `telegram_resolve_peer` | `peer` | Resolves any username, phone, or ID to detailed entity metadata and type. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |

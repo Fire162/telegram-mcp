@@ -638,6 +638,189 @@ async def telegram_send_album(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_save_draft(
+    bot_username: str,
+    text: str,
+    reply_to_msg_id: Optional[int] = None,
+) -> str:
+    """
+    Saves an uncommitted message draft into the chat input field without sending it.
+    The user will see this draft pre-filled in their Telegram client.
+    """
+    try:
+        res = await telegram_service.save_draft(
+            bot_username=bot_username,
+            text=text,
+            reply_to_msg_id=reply_to_msg_id,
+        )
+        return json.dumps({"status": "success", "draft": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_schedule_message(
+    bot_username: str,
+    text: str,
+    schedule_in_seconds: Optional[int] = None,
+    schedule_date_iso: Optional[str] = None,
+) -> str:
+    """
+    Schedules a message to be automatically delivered at a future time.
+    Provide either schedule_in_seconds (relative delay) or schedule_date_iso (ISO 8601 string).
+    """
+    try:
+        res = await telegram_service.schedule_message(
+            bot_username=bot_username,
+            text=text,
+            schedule_in_seconds=schedule_in_seconds,
+            schedule_date_iso=schedule_date_iso,
+        )
+        return json.dumps({"status": "success", "scheduled_message": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_scheduled_messages(
+    bot_username: str,
+) -> str:
+    """
+    Retrieves all pending scheduled messages queued for delivery in the specified chat.
+    """
+    try:
+        msgs = await telegram_service.get_scheduled_messages(bot_username=bot_username)
+        return json.dumps({"status": "success", "count": len(msgs), "messages": msgs}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_delete_scheduled_messages(
+    bot_username: str,
+    message_ids: List[int],
+) -> str:
+    """
+    Cancels or deletes one or more scheduled messages before they are delivered.
+    """
+    try:
+        res = await telegram_service.delete_scheduled_messages(
+            bot_username=bot_username,
+            message_ids=message_ids,
+        )
+        return json.dumps({"status": "success", "result": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_pinned_messages(
+    bot_username: str,
+    limit: int = 10,
+) -> str:
+    """
+    Retrieves pinned messages directly from a bot, group, or channel.
+    """
+    try:
+        msgs = await telegram_service.get_pinned_messages(bot_username=bot_username, limit=limit)
+        return json.dumps({"status": "success", "count": len(msgs), "messages": msgs}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_mute_chat(
+    bot_username: str,
+    duration_seconds: Optional[int] = None,
+) -> str:
+    """
+    Mutes notifications for a chat, bot, or channel for a specified duration in seconds (or permanently if omitted).
+    """
+    try:
+        res = await telegram_service.mute_chat(bot_username=bot_username, duration_seconds=duration_seconds)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_unmute_chat(
+    bot_username: str,
+) -> str:
+    """
+    Unmutes notifications for a chat, bot, or channel.
+    """
+    try:
+        res = await telegram_service.unmute_chat(bot_username=bot_username)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_export_chat(
+    bot_username: str,
+    limit: int = 50,
+    format: str = "markdown",
+) -> str:
+    """
+    Exports conversation history formatted as clean Markdown or structured JSON, optimized for LLM processing.
+    Format can be 'markdown' or 'json'.
+    """
+    try:
+        res = await telegram_service.export_chat(bot_username=bot_username, limit=limit, format=format)
+        return json.dumps({"status": "success", "export": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_chat_members(
+    bot_username: str,
+    limit: int = 50,
+) -> str:
+    """
+    Lists participants of a group, chat, or channel with their names, IDs, and usernames.
+    """
+    try:
+        members = await telegram_service.get_chat_members(bot_username=bot_username, limit=limit)
+        return json.dumps({"status": "success", "count": len(members), "members": members}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_contacts(
+    query: Optional[str] = None,
+    limit: int = 50,
+) -> str:
+    """
+    Retrieves the user's saved Telegram contacts, optionally filtering by name or username.
+    Phone numbers are automatically masked for privacy.
+    """
+    try:
+        contacts = await telegram_service.get_contacts(query=query, limit=limit)
+        return json.dumps({"status": "success", "count": len(contacts), "contacts": contacts}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_resolve_peer(
+    peer: str,
+) -> str:
+    """
+    Resolves any Telegram entity identifier (username, phone, invite link, or ID) into detailed metadata
+    (entity type, verified status, bot/channel/group flags).
+    """
+    try:
+        info = await telegram_service.resolve_peer(peer=peer)
+        return json.dumps({"status": "success", "entity": info}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

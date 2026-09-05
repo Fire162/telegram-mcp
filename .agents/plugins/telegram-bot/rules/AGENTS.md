@@ -32,5 +32,16 @@
 - `telegram_get_bot_info(bot_username)`: Inspects bot description, about text, and registered commands list.
 - `telegram_pin_message(bot_username, message_id, notify)`: Pins messages in bot or group chats.
 - `telegram_unpin_message(bot_username, message_id)`: Unpins messages in bot or group chats.
-- `telegram_get_message_context(bot_username, message_id, limit_before, limit_after)`: Fetches surrounding conversation context for test failure diagnosis.
 - `telegram_send_album(bot_username, file_paths, caption)`: Sends multiple photos/documents grouped as an album in one message.
+- `telegram_save_draft(bot_username, text, reply_to_msg_id)`: Saves an uncommitted draft into chat input field.
+- `telegram_schedule_message(bot_username, text, schedule_in_seconds, schedule_date_iso)`: Schedules future automated delivery of a message.
+- `telegram_get_scheduled_messages(bot_username)`: Retrieves queued scheduled messages in a chat.
+- `telegram_delete_scheduled_messages(bot_username, message_ids)`: Cancels or deletes scheduled messages before delivery.
+- `telegram_get_pinned_messages(bot_username, limit)`: Fetches pinned messages from any chat, bot, or channel.
+- `telegram_mute_chat(bot_username, duration_seconds)`: Mutes notifications for a specified duration or permanently.
+- `telegram_unmute_chat(bot_username)`: Unmutes notifications for a chat or channel.
+- `telegram_export_chat(bot_username, limit, format)`: Exports formatted conversation history as clean Markdown or JSON for AI processing.
+- `telegram_get_chat_members(bot_username, limit)`: Lists participants in a group or channel with their roles and IDs.
+- `telegram_get_contacts(query, limit)`: Retrieves saved Telegram contacts with privacy-masked phone numbers.
+- `telegram_resolve_peer(peer)`: Resolves any username, phone, or ID to full entity metadata.
+

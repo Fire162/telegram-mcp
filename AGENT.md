@@ -166,3 +166,47 @@ The server exposes the following tools:
 25. `telegram_send_album`
     - **Arguments**: `bot_username`, `file_paths`, `caption?`
     - **Usage**: Sends multiple photos/files as a grouped album in a single message.
+
+26. `telegram_save_draft`
+    - **Arguments**: `bot_username`, `text`, `reply_to_msg_id?`
+    - **Usage**: Saves an uncommitted draft into the chat input field without sending it.
+
+27. `telegram_schedule_message`
+    - **Arguments**: `bot_username`, `text`, `schedule_in_seconds?`, `schedule_date_iso?`
+    - **Usage**: Schedules a message to be automatically delivered in the future.
+
+28. `telegram_get_scheduled_messages`
+    - **Arguments**: `bot_username`
+    - **Usage**: Retrieves all pending scheduled messages queued in a chat.
+
+29. `telegram_delete_scheduled_messages`
+    - **Arguments**: `bot_username`, `message_ids`
+    - **Usage**: Cancels or deletes scheduled messages before delivery.
+
+30. `telegram_get_pinned_messages`
+    - **Arguments**: `bot_username`, `limit?` (default: `10`)
+    - **Usage**: Directly retrieves pinned messages in any chat, bot, or channel.
+
+31. `telegram_mute_chat`
+    - **Arguments**: `bot_username`, `duration_seconds?`
+    - **Usage**: Mutes chat notifications for a specified duration or permanently.
+
+32. `telegram_unmute_chat`
+    - **Arguments**: `bot_username`
+    - **Usage**: Unmutes notifications for a chat or channel.
+
+33. `telegram_export_chat`
+    - **Arguments**: `bot_username`, `limit?` (default: `50`), `format?` (`"markdown"` or `"json"`)
+    - **Usage**: Exports formatted conversation transcripts optimized for AI summarization and reasoning.
+
+34. `telegram_get_chat_members`
+    - **Arguments**: `bot_username`, `limit?` (default: `50`)
+    - **Usage**: Lists group or channel participants with their names, IDs, and bot status.
+
+35. `telegram_get_contacts`
+    - **Arguments**: `query?`, `limit?` (default: `50`)
+    - **Usage**: Retrieves saved Telegram contacts with privacy-masked phone numbers.
+
+36. `telegram_resolve_peer`
+    - **Arguments**: `peer`
+    - **Usage**: Resolves any entity (username, phone, invite link, ID) into full metadata and classification.

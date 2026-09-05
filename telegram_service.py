@@ -5,6 +5,7 @@ import json
 import time
 import fcntl
 import asyncio
+import datetime
 import traceback
 from typing import Optional, List, Dict, Any, Union
 from telethon import TelegramClient, custom, events
@@ -763,6 +764,250 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         if not isinstance(sent, list):
             sent = [sent]
         return [self._format_message(m) for m in sent]
+
+    async def save_draft(
+        self,
+        bot_username: str,
+        text: str,
+        reply_to_msg_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        reply_to_obj = types.InputReplyToMessage(reply_to_msg_id=reply_to_msg_id) if reply_to_msg_id else None
+
+        res = await client(
+            functions.messages.SaveDraftRequest(
+                peer=entity,
+                message=text,
+                reply_to=reply_to_obj,
+                no_webpage=True,
+            )
+        )
+        return {"success": bool(res), "target": target, "draft_text": text}
+
+    async def schedule_message(
+        self,
+        bot_username: str,
+        text: str,
+        schedule_in_seconds: Optional[int] = None,
+        schedule_date_iso: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        if schedule_in_seconds is not None:
+            schedule_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=schedule_in_seconds)
+        elif schedule_date_iso is not None:
+            schedule_date = datetime.datetime.fromisoformat(schedule_date_iso)
+            if schedule_date.tzinfo is None:
+                schedule_date = schedule_date.replace(tzinfo=datetime.timezone.utc)
+        else:
+            raise ValueError("Must provide either schedule_in_seconds or schedule_date_iso")
+
+        sent = await client.send_message(entity, text, schedule=schedule_date)
+        return {
+            "success": True,
+            "scheduled_message_id": sent.id,
+            "scheduled_date": sent.date.isoformat() if sent.date else schedule_date.isoformat(),
+            "text": text,
+        }
+
+    async def get_scheduled_messages(self, bot_username: str) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        sched = await client(functions.messages.GetScheduledHistoryRequest(peer=entity, hash=0))
+        return [self._format_message(m) for m in sched.messages]
+
+    async def delete_scheduled_messages(
+        self,
+        bot_username: str,
+        message_ids: List[int],
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client(functions.messages.DeleteScheduledMessagesRequest(peer=entity, id=message_ids))
+        return {"success": True, "deleted_ids": message_ids}
+
+    async def get_pinned_messages(
+        self,
+        bot_username: str,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        messages = await client.get_messages(entity, filter=types.InputMessagesFilterPinned(), limit=limit)
+        return [self._format_message(m) for m in messages]
+
+    async def mute_chat(
+        self,
+        bot_username: str,
+        duration_seconds: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        if duration_seconds is not None and duration_seconds > 0:
+            mute_until = int(time.time()) + duration_seconds
+        else:
+            mute_until = 2147483647  # Permanently
+
+        await client(
+            functions.account.UpdateNotifySettingsRequest(
+                peer=types.InputNotifyPeer(entity),
+                settings=types.InputPeerNotifySettings(mute_until=mute_until),
+            )
+        )
+        return {"success": True, "target": target, "muted_until_unix": mute_until}
+
+    async def unmute_chat(self, bot_username: str) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client(
+            functions.account.UpdateNotifySettingsRequest(
+                peer=types.InputNotifyPeer(entity),
+                settings=types.InputPeerNotifySettings(mute_until=0),
+            )
+        )
+        return {"success": True, "target": target, "muted": False}
+
+    async def export_chat(
+        self,
+        bot_username: str,
+        limit: int = 50,
+        format: str = "markdown",
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        raw_messages = await client.get_messages(entity, limit=limit)
+        formatted = [self._format_message(m) for m in reversed(raw_messages)]
+
+        if format.lower() == "markdown":
+            lines = [f"# Chat Transcript: {target}", f"**Total Messages:** {len(formatted)}\n"]
+            for m in formatted:
+                sender = m.get("sender", "unknown")
+                date = m.get("date", "")
+                text = m.get("text") or "[no text]"
+                media = f" *(media: {m['media_type']})*" if m.get("media_type") else ""
+                lines.append(f"- **[{date}] {sender}{media}:** {text}")
+            content = "\n".join(lines)
+            return {"format": "markdown", "count": len(formatted), "content": content}
+        else:
+            return {"format": "json", "count": len(formatted), "messages": formatted}
+
+    async def get_chat_members(
+        self,
+        bot_username: str,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        participants = await client.get_participants(entity, limit=limit)
+        result = []
+        for p in participants:
+            first_name = getattr(p, "first_name", "") or ""
+            last_name = getattr(p, "last_name", "") or ""
+            name = f"{first_name} {last_name}".strip() or first_name
+            result.append({
+                "id": p.id,
+                "name": name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "username": getattr(p, "username", None),
+                "is_bot": getattr(p, "bot", False),
+            })
+        return result
+
+    async def get_contacts(
+        self,
+        query: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        contacts_res = await client(functions.contacts.GetContactsRequest(hash=0))
+        users = contacts_res.users if hasattr(contacts_res, "users") else []
+
+        result = []
+        query_lower = query.lower() if query else None
+        for u in users:
+            first_name = getattr(u, "first_name", "") or ""
+            last_name = getattr(u, "last_name", "") or ""
+            name = f"{first_name} {last_name}".strip() or first_name
+            username = getattr(u, "username", "") or ""
+            phone = getattr(u, "phone", "") or ""
+
+            if query_lower:
+                if (
+                    query_lower not in name.lower()
+                    and query_lower not in username.lower()
+                    and query_lower not in phone
+                ):
+                    continue
+
+            masked_phone = None
+            if phone:
+                masked_phone = f"+{phone[:2]} ****** {phone[-4:]}" if len(phone) >= 6 else "***"
+
+            result.append({
+                "id": u.id,
+                "name": name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "username": username or None,
+                "phone": masked_phone,
+                "is_bot": getattr(u, "bot", False),
+            })
+            if len(result) >= limit:
+                break
+        return result
+
+    async def resolve_peer(self, peer: str) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = peer.strip()
+        if target.isdigit():
+            target = int(target)
+
+        entity = await client.get_entity(target)
+        first_name = getattr(entity, "first_name", "") or ""
+        last_name = getattr(entity, "last_name", "") or ""
+        title = getattr(entity, "title", "") or ""
+        name = title or f"{first_name} {last_name}".strip() or first_name
+
+        entity_type = "user"
+        if getattr(entity, "bot", False):
+            entity_type = "bot"
+        elif getattr(entity, "megagroup", False) or getattr(entity, "gigagroup", False):
+            entity_type = "supergroup"
+        elif getattr(entity, "broadcast", False):
+            entity_type = "channel"
+        elif getattr(entity, "is_group", False):
+            entity_type = "group"
+
+        return {
+            "id": entity.id,
+            "type": entity_type,
+            "name": name,
+            "username": getattr(entity, "username", None),
+            "verified": getattr(entity, "verified", False),
+            "restricted": getattr(entity, "restricted", False),
+            "scam": getattr(entity, "scam", False),
+            "fake": getattr(entity, "fake", False),
+        }
 
 
 telegram_service = TelegramService()

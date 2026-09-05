@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.6.0] — 2026-09-05 (20:30 IST)
+`[2026-09-05]{20:30:00} v1.6.0 Release: Added drafts, scheduled messages, pinned filters, mute/unmute, chat export transcripts, member directory, contacts, and peer resolver #36 total MCP tools`
+
+### 🚀 New Features
+* **Draft Management (`telegram_save_draft`)**: Saves uncommitted message drafts into chat input boxes with optional reply-to target.
+* **Scheduled Messaging (`telegram_schedule_message`, `telegram_get_scheduled_messages`, `telegram_delete_scheduled_messages`)**: Schedule messages for future automated delivery, view scheduled queue, and cancel scheduled deliveries.
+* **Pinned Message Direct Filter (`telegram_get_pinned_messages`)**: Retrieve pinned messages directly from chats, bots, or channels.
+* **Mute & Unmute Chat Notifications (`telegram_mute_chat`, `telegram_unmute_chat`)**: Control notification muting for specified time intervals or permanently.
+* **LLM Chat Export & Transcripts (`telegram_export_chat`)**: Export full conversation history formatted as clean Markdown or structured JSON for agent digest and summarization.
+* **Participant Inspection (`telegram_get_chat_members`)**: List group and channel participants with names, usernames, and bot badges.
+* **Contacts Directory (`telegram_get_contacts`)**: Retrieve and filter saved contacts with automatic phone masking.
+* **Entity Resolver (`telegram_resolve_peer`)**: Resolves usernames, phone numbers, or IDs to complete entity metadata.
+
+---
+
 ## [v1.5.0] — 2026-09-05 (20:20 IST)
 
 ### 🚀 New Features
