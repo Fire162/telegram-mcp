@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.5.0] — 2026-09-05 (20:20 IST)
+
+### 🚀 New Features
+* **Bot Inspection (`telegram_get_bot_info`)**: Fetches full bot profile info including about text, description, and registered command definitions.
+* **Message Pinning & Unpinning (`telegram_pin_message`, `telegram_unpin_message`)**: Pin announcements or test status messages, and unpin individually or in bulk.
+* **Message Context Fetching (`telegram_get_message_context`)**: Fetches surrounding dialogue context around a specific message ID for test diagnosis.
+* **Grouped Albums (`telegram_send_album`)**: Sends multiple photos/documents grouped together as an album in a single message.
+
+---
+
 ## [v1.4.0] — 2026-09-05 (20:15 IST)
 
 ### 🚀 New Features

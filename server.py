@@ -555,6 +555,89 @@ async def telegram_search_messages(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_get_bot_info(
+    bot_username: str,
+) -> str:
+    """
+    Retrieves full bot profile information including title, description, about text, and registered commands.
+    """
+    try:
+        info = await telegram_service.get_bot_info(bot_username)
+        return json.dumps({"status": "success", "bot_info": info}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_pin_message(
+    bot_username: str,
+    message_id: int,
+    notify: bool = False,
+) -> str:
+    """
+    Pins a message in the chat with the bot or group.
+    """
+    try:
+        res = await telegram_service.pin_message(bot_username, message_id, notify=notify)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_unpin_message(
+    bot_username: str,
+    message_id: Optional[int] = None,
+) -> str:
+    """
+    Unpins a specific message, or unpins all messages in the chat if message_id is omitted.
+    """
+    try:
+        res = await telegram_service.unpin_message(bot_username, message_id)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_message_context(
+    bot_username: str,
+    message_id: int,
+    limit_before: int = 5,
+    limit_after: int = 5,
+) -> str:
+    """
+    Fetches the surrounding conversation context (preceding and succeeding messages) around a specific message ID.
+    """
+    try:
+        res = await telegram_service.get_message_context(
+            bot_username=bot_username,
+            message_id=message_id,
+            limit_before=limit_before,
+            limit_after=limit_after,
+        )
+        return json.dumps({"status": "success", "context": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_send_album(
+    bot_username: str,
+    file_paths: List[str],
+    caption: Optional[str] = None,
+) -> str:
+    """
+    Sends multiple photos or files grouped together as an album in a single message.
+    """
+    try:
+        sent = await telegram_service.send_album(bot_username=bot_username, file_paths=file_paths, caption=caption)
+        return json.dumps({"status": "success", "album_count": len(sent), "items": sent}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

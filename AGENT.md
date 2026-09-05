@@ -146,3 +146,23 @@ The server exposes the following tools:
 20. `telegram_clear_chat`
     - **Arguments**: `bot_username`
     - **Usage**: Deletes dialog history for clean testing states.
+
+21. `telegram_get_bot_info`
+    - **Arguments**: `bot_username`
+    - **Usage**: Retrieves full bot profile information including title, description, about text, and registered commands.
+
+22. `telegram_pin_message`
+    - **Arguments**: `bot_username`, `message_id`, `notify?` (default: `False`)
+    - **Usage**: Pins a message in the chat with the bot or group.
+
+23. `telegram_unpin_message`
+    - **Arguments**: `bot_username`, `message_id?`
+    - **Usage**: Unpins a specific message, or all pinned messages if omitted.
+
+24. `telegram_get_message_context`
+    - **Arguments**: `bot_username`, `message_id`, `limit_before?` (default: `5`), `limit_after?` (default: `5`)
+    - **Usage**: Fetches surrounding conversation context around a specific message ID.
+
+25. `telegram_send_album`
+    - **Arguments**: `bot_username`, `file_paths`, `caption?`
+    - **Usage**: Sends multiple photos/files as a grouped album in a single message.

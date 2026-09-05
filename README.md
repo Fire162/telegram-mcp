@@ -119,6 +119,11 @@ Add to your `claude_desktop_config.json`:
 | `telegram_inline_query` | `bot_username`, `query` | Performs inline queries (`@bot query`). |
 | `telegram_send_and_verify` | `bot_username`, `input_text`, `expected_contains` | Convenience single-step assertion. |
 | `telegram_run_test_suite` | `bot_username`, `steps` | Runs multi-step test workflows with `sleep` and assertions. |
+| `telegram_get_bot_info` | `bot_username` | Inspects a bot's description, about text, commands list, and profile metadata. |
+| `telegram_pin_message` | `bot_username`, `message_id`, `notify?` | Pins a message in the chat with the bot or group. |
+| `telegram_unpin_message` | `bot_username`, `message_id?` | Unpins a specific message, or unpins all messages in the chat. |
+| `telegram_get_message_context` | `bot_username`, `message_id`, `limit_before?`, `limit_after?` | Fetches preceding and succeeding messages around a message ID. |
+| `telegram_send_album` | `bot_username`, `file_paths`, `caption?` | Sends multiple photos/files as a grouped album in one message. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |

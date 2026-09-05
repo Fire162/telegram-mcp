@@ -674,5 +674,89 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         finally:
             sys.stdout, sys.stderr = old_stdout, old_stderr
 
+    async def get_bot_info(self, bot_username: str) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+        full = await client(functions.users.GetFullUserRequest(id=entity))
+        user = full.users[0] if full.users else None
+        bot_info = getattr(full, "bot_info", None) or getattr(full.full_user, "bot_info", None)
+
+        commands = []
+        if bot_info and hasattr(bot_info, "commands") and bot_info.commands:
+            commands = [{"command": c.command, "description": c.description} for c in bot_info.commands]
+
+        return {
+            "id": getattr(user, "id", None),
+            "first_name": getattr(user, "first_name", None),
+            "last_name": getattr(user, "last_name", None),
+            "username": getattr(user, "username", None),
+            "is_bot": getattr(user, "bot", True),
+            "about": getattr(full.full_user, "about", None),
+            "commands": commands,
+        }
+
+    async def pin_message(
+        self,
+        bot_username: str,
+        message_id: int,
+        notify: bool = False,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client.pin_message(entity, message_id, notify=notify)
+        return {"success": True, "pinned_message_id": message_id}
+
+    async def unpin_message(
+        self,
+        bot_username: str,
+        message_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client.unpin_message(entity, message_id)
+        return {"success": True, "unpinned_message_id": message_id or "all"}
+
+    async def get_message_context(
+        self,
+        bot_username: str,
+        message_id: int,
+        limit_before: int = 5,
+        limit_after: int = 5,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        min_id = max(0, message_id - limit_before - 1)
+        max_id = message_id + limit_after + 1
+        messages = await client.get_messages(entity, min_id=min_id, max_id=max_id)
+        return {
+            "target_message_id": message_id,
+            "messages": [self._format_message(m) for m in messages],
+        }
+
+    async def send_album(
+        self,
+        bot_username: str,
+        file_paths: List[str],
+        caption: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+
+        for p in file_paths:
+            if not os.path.exists(p):
+                raise FileNotFoundError(f"File not found: {p}")
+
+        sent = await client.send_file(target, file_paths, caption=caption)
+        if not isinstance(sent, list):
+            sent = [sent]
+        return [self._format_message(m) for m in sent]
+
 
 telegram_service = TelegramService()

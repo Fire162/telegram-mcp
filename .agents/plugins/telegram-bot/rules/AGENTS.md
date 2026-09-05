@@ -29,3 +29,8 @@
 - `telegram_run_test_suite(bot_username, steps)`: Runs full multi-step test workflows with `sleep`, assertions, file uploads, and button clicks in one call.
 - `telegram_get_chat_history(bot_username)`: Reads recent conversation history.
 - `telegram_clear_chat(bot_username)`: Clears chat history for clean test states.
+- `telegram_get_bot_info(bot_username)`: Inspects bot description, about text, and registered commands list.
+- `telegram_pin_message(bot_username, message_id, notify)`: Pins messages in bot or group chats.
+- `telegram_unpin_message(bot_username, message_id)`: Unpins messages in bot or group chats.
+- `telegram_get_message_context(bot_username, message_id, limit_before, limit_after)`: Fetches surrounding conversation context for test failure diagnosis.
+- `telegram_send_album(bot_username, file_paths, caption)`: Sends multiple photos/documents grouped as an album in one message.
