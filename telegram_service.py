@@ -1119,76 +1119,146 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         message_id: Optional[int] = None,
         button_text: Optional[str] = None,
         button_index: Optional[int] = None,
+        start_param: Optional[str] = None,
     ) -> Dict[str, Any]:
         client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
         entity = await client.get_input_entity(target)
+        bot_user = await client.get_input_entity(target)
 
+        # 1. If explicit message_id or button query specified, look for matching message button
         msg = None
         if message_id is not None:
             msgs = await client.get_messages(entity, ids=[message_id])
             if msgs and msgs[0]:
                 msg = msgs[0]
-        else:
-            messages = await client.get_messages(entity, limit=5)
+        elif button_text is not None or button_index is not None:
+            messages = await client.get_messages(entity, limit=10)
             for m in messages:
                 if m.buttons:
                     msg = m
                     break
 
-        if not msg or not msg.buttons:
-            raise ValueError(f"No message with buttons found in {target} (message_id: {message_id})")
-
-        found_button = None
-        if button_text:
-            text_clean = button_text.lower().strip()
-            for row in msg.buttons:
-                for b in row:
-                    if text_clean in (b.text or "").lower():
-                        found_button = b
+        if msg and msg.buttons:
+            found_button = None
+            if button_text:
+                text_clean = button_text.lower().strip()
+                for row in msg.buttons:
+                    for b in row:
+                        if text_clean in (b.text or "").lower():
+                            found_button = b
+                            break
+                    if found_button:
                         break
-                if found_button:
-                    break
-        elif button_index is not None:
-            flat = [b for row in msg.buttons for b in row]
-            if 0 <= button_index < len(flat):
-                found_button = flat[button_index]
-        else:
-            found_button = msg.buttons[0][0]
+            elif button_index is not None:
+                flat = [b for row in msg.buttons for b in row]
+                if 0 <= button_index < len(flat):
+                    found_button = flat[button_index]
+            else:
+                for row in msg.buttons:
+                    for b in row:
+                        btn_r = getattr(b, "button", b)
+                        if getattr(btn_r, "web_app", None) or getattr(b, "url", None):
+                            found_button = b
+                            break
+                    if found_button:
+                        break
+                if not found_button:
+                    found_button = msg.buttons[0][0]
 
-        if not found_button:
-            raise ValueError(f"Button not found on message {msg.id}")
+            if found_button:
+                btn_raw = getattr(found_button, "button", found_button)
+                web_app_url = getattr(found_button, "url", None)
+                web_app_info = getattr(btn_raw, "web_app", None)
+                if web_app_info and hasattr(web_app_info, "url"):
+                    web_app_url = web_app_info.url
 
-        btn_raw = getattr(found_button, "button", found_button)
-        web_app_url = getattr(found_button, "url", None)
-        web_app_info = getattr(btn_raw, "web_app", None)
-        if web_app_info and hasattr(web_app_info, "url"):
-            web_app_url = web_app_info.url
+                request_url = None
+                if web_app_url:
+                    try:
+                        req_kwargs = {
+                            "peer": entity,
+                            "bot": bot_user,
+                            "platform": "android",
+                            "url": web_app_url,
+                        }
+                        if start_param:
+                            req_kwargs["start_param"] = start_param
+                        res = await client(functions.messages.RequestWebViewRequest(**req_kwargs))
+                        if hasattr(res, "url"):
+                            request_url = res.url
+                    except Exception:
+                        pass
 
-        request_url = None
-        bot_user = await client.get_input_entity(target)
+                final_url = request_url or web_app_url or getattr(found_button, "url", None)
+                if final_url:
+                    return {
+                        "app_type": "inline_button",
+                        "button_text": getattr(found_button, "text", ""),
+                        "web_app_url": final_url,
+                        "raw_url": getattr(found_button, "url", None),
+                        "message_id": msg.id,
+                        "bot_username": target,
+                    }
+
+        # 2. Check if the bot has a Main Mini App attached to its profile
         try:
-            res = await client(
-                functions.messages.RequestWebViewRequest(
-                    peer=entity,
-                    bot=bot_user,
-                    platform="android",
-                    url=web_app_url,
-                )
-            )
-            if hasattr(res, "url"):
-                request_url = res.url
+            req_kwargs = {
+                "peer": entity,
+                "bot": bot_user,
+                "platform": "android",
+            }
+            if start_param:
+                req_kwargs["start_param"] = start_param
+            main_res = await client(functions.messages.RequestMainWebViewRequest(**req_kwargs))
+            if hasattr(main_res, "url") and main_res.url:
+                return {
+                    "app_type": "main_app",
+                    "button_text": None,
+                    "web_app_url": main_res.url,
+                    "raw_url": None,
+                    "message_id": None,
+                    "bot_username": target,
+                }
         except Exception:
             pass
 
-        final_url = request_url or web_app_url or getattr(found_button, "url", None)
-        return {
-            "button_text": getattr(found_button, "text", ""),
-            "web_app_url": final_url,
-            "raw_url": getattr(found_button, "url", None),
-            "message_id": msg.id,
-            "bot_username": target,
-        }
+        # 3. Fallback: check recent messages for any inline button with web_app
+        if not msg:
+            messages = await client.get_messages(entity, limit=5)
+            for m in messages:
+                if m.buttons:
+                    for row in m.buttons:
+                        for b in row:
+                            btn_raw = getattr(b, "button", b)
+                            web_app_info = getattr(btn_raw, "web_app", None)
+                            if web_app_info and hasattr(web_app_info, "url"):
+                                req_url = None
+                                try:
+                                    req_kwargs = {
+                                        "peer": entity,
+                                        "bot": bot_user,
+                                        "platform": "android",
+                                        "url": web_app_info.url,
+                                    }
+                                    if start_param:
+                                        req_kwargs["start_param"] = start_param
+                                    res = await client(functions.messages.RequestWebViewRequest(**req_kwargs))
+                                    req_url = getattr(res, "url", None)
+                                except Exception:
+                                    pass
+                                return {
+                                    "app_type": "inline_button",
+                                    "button_text": getattr(b, "text", ""),
+                                    "web_app_url": req_url or web_app_info.url or getattr(b, "url", None),
+                                    "raw_url": getattr(b, "url", None),
+                                    "message_id": m.id,
+                                    "bot_username": target,
+                                }
+
+        raise ValueError(
+            f"No inline web app button or Main Mini App found for {target} (message_id: {message_id})"
+        )
 
     async def click_reply_button(
         self,
