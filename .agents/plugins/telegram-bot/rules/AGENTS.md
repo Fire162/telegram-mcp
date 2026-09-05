@@ -44,4 +44,4 @@
 - `telegram_get_chat_members(bot_username, limit)`: Lists participants in a group or channel with their roles and IDs.
 - `telegram_get_contacts(query, limit)`: Retrieves saved Telegram contacts with privacy-masked phone numbers.
 - `telegram_resolve_peer(peer)`: Resolves any username, phone, or ID to full entity metadata.
-
+- `telegram_wait_for(bot_username, text_contains, after_message_id, target_message_id, wait_for_edit, timeout_seconds, poll_interval)`: Explicitly waits for incoming bot replies or message edits.

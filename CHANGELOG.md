@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
-## [v1.6.0] — 2026-09-05 (20:30 IST)
-`[2026-09-05]{20:30:00} v1.6.0 Release: Added drafts, scheduled messages, pinned filters, mute/unmute, chat export transcripts, member directory, contacts, and peer resolver #36 total MCP tools`
+## [v1.6.0] — 2026-09-05 (20:32 IST)
+`[2026-09-05]{20:32:00} v1.6.0 Release: Added drafts, scheduled messages, pinned filters, mute/unmute, chat export transcripts, member directory, contacts, peer resolver, and standalone wait_for #37 total MCP tools`
 
 ### 🚀 New Features
+* **Explicit Wait Engine (`telegram_wait_for`)**: Dedicated tool to wait for asynchronous bot responses, substring containment, message edits, or progress updates without manual agent polling.
 * **Draft Management (`telegram_save_draft`)**: Saves uncommitted message drafts into chat input boxes with optional reply-to target.
 * **Scheduled Messaging (`telegram_schedule_message`, `telegram_get_scheduled_messages`, `telegram_delete_scheduled_messages`)**: Schedule messages for future automated delivery, view scheduled queue, and cancel scheduled deliveries.
 * **Pinned Message Direct Filter (`telegram_get_pinned_messages`)**: Retrieve pinned messages directly from chats, bots, or channels.

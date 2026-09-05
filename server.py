@@ -821,6 +821,43 @@ async def telegram_resolve_peer(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_wait_for(
+    bot_username: str,
+    text_contains: Optional[str] = None,
+    after_message_id: Optional[int] = None,
+    target_message_id: Optional[int] = None,
+    wait_for_edit: bool = False,
+    timeout_seconds: int = 30,
+    poll_interval: float = 1.0,
+) -> str:
+    """
+    Waits for a bot reply, specific message text, or a message edit/progress update.
+    Useful for asynchronous bot tasks, long-running processes, or verifying status changes.
+
+    - bot_username: Target bot or chat username/ID.
+    - text_contains: Optional substring that the incoming or edited message must contain.
+    - after_message_id: Only consider new messages with an ID higher than this.
+    - target_message_id: Wait for an edit/update on this specific message.
+    - wait_for_edit: Set True to wait for an edit rather than a new message.
+    - timeout_seconds: Maximum time to wait in seconds (default: 30).
+    - poll_interval: Frequency in seconds to check for updates (default: 1.0).
+    """
+    try:
+        res = await telegram_service.wait_for(
+            bot_username=bot_username,
+            text_contains=text_contains,
+            after_message_id=after_message_id,
+            target_message_id=target_message_id,
+            wait_for_edit=wait_for_edit,
+            timeout_seconds=timeout_seconds,
+            poll_interval=poll_interval,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

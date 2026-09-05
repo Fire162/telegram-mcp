@@ -1009,5 +1009,71 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             "fake": getattr(entity, "fake", False),
         }
 
+    async def wait_for(
+        self,
+        bot_username: str,
+        text_contains: Optional[str] = None,
+        after_message_id: Optional[int] = None,
+        target_message_id: Optional[int] = None,
+        wait_for_edit: bool = False,
+        timeout_seconds: int = 30,
+        poll_interval: float = 1.0,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        start_time = asyncio.get_event_loop().time()
+        initial_text = None
+        initial_edit_date = None
+
+        if target_message_id is not None:
+            init_msgs = await client.get_messages(entity, ids=[target_message_id])
+            if init_msgs and init_msgs[0]:
+                initial_text = init_msgs[0].text
+                initial_edit_date = init_msgs[0].edit_date
+
+        while asyncio.get_event_loop().time() - start_time < timeout_seconds:
+            if target_message_id is not None or wait_for_edit:
+                check_id = target_message_id
+                if check_id is None:
+                    recent = await client.get_messages(entity, limit=1)
+                    if recent:
+                        check_id = recent[0].id
+
+                if check_id is not None:
+                    msgs = await client.get_messages(entity, ids=[check_id])
+                    if msgs and msgs[0]:
+                        cur = msgs[0]
+                        has_changed = (cur.text != initial_text) or (
+                            cur.edit_date != initial_edit_date and cur.edit_date is not None
+                        )
+                        text_matches = not text_contains or (text_contains.lower() in (cur.text or "").lower())
+                        if has_changed and text_matches:
+                            return {
+                                "status": "success",
+                                "matched_event": "message_edited",
+                                "message": self._format_message(cur),
+                            }
+            else:
+                messages = await client.get_messages(entity, limit=10)
+                for msg in messages:
+                    if not msg.out and (after_message_id is None or msg.id > after_message_id):
+                        if not text_contains or (text_contains.lower() in (msg.text or "").lower()):
+                            return {
+                                "status": "success",
+                                "matched_event": "new_message",
+                                "message": self._format_message(msg),
+                            }
+
+            await asyncio.sleep(poll_interval)
+
+        return {
+            "status": "timeout",
+            "matched": False,
+            "message": f"Timed out after {timeout_seconds}s waiting for matching message from {target}",
+        }
+
 
 telegram_service = TelegramService()
+

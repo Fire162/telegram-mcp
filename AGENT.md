@@ -210,3 +210,7 @@ The server exposes the following tools:
 36. `telegram_resolve_peer`
     - **Arguments**: `peer`
     - **Usage**: Resolves any entity (username, phone, invite link, ID) into full metadata and classification.
+
+37. `telegram_wait_for`
+    - **Arguments**: `bot_username`, `text_contains?`, `after_message_id?`, `target_message_id?`, `wait_for_edit?` (default: `False`), `timeout_seconds` (default: `30`), `poll_interval` (default: `1.0`)
+    - **Usage**: Explicitly waits for an asynchronous bot response, incoming text match, or message edit/progress update.

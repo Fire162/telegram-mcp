@@ -135,6 +135,7 @@ Add to your `claude_desktop_config.json`:
 | `telegram_get_chat_members` | `bot_username`, `limit?` | Lists group/channel participants with names, IDs, and bot flags. |
 | `telegram_get_contacts` | `query?`, `limit?` | Retrieves saved Telegram contacts with privacy-masked phone numbers. |
 | `telegram_resolve_peer` | `peer` | Resolves any username, phone, or ID to detailed entity metadata and type. |
+| `telegram_wait_for` | `bot_username`, `text_contains?`, `after_message_id?`, `target_message_id?`, `wait_for_edit?`, `timeout_seconds?` | Waits for an incoming message, specific substring, or message edit/progress update. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |
