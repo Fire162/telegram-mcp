@@ -6,13 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
-## [v1.14.1] — 2026-09-05 (21:59 IST)
+## [v1.14.2] — 2026-09-05 (21:59 IST)
 `[2026-09-05]{21:59:00} Fix Poll hash parameter, numeric chat ID resolution, and chat_identifier parameter #fixes #14`
 
 ### 🐛 Bug Fixes
 * **Poll Constructor Hash Parameter (`telegram_send_poll`)**: Added required `hash=0` parameter to `types.Poll` constructor to prevent `TypeError: Poll.__init__() missing 1 required positional argument: 'hash'`. (Fixes #14)
 * **Numeric Chat & Channel ID Resolution (`_clean_bot_username`)**: Converted purely numeric string IDs (`8005608299`, `-100...`) to integers so Telethon's `get_input_entity` resolves them as channel/chat IDs rather than misinterpreting them as phone numbers.
 * **Chat Members Identifier (`telegram_get_chat_members`)**: Allowed `telegram_get_chat_members` to accept either `chat_identifier` or `bot_username` for consistent parameter handling across chat tools.
+
+---
+
+## [v1.14.1] — 2026-09-05 (21:44 IST)
+`[2026-09-05]{21:44:00} Fix get_web_app_url to support bot Main Mini Apps and deep linking start_param #fixes #12`
+
+### 🐛 Bug Fixes
+* **Main Mini App Resolution (`telegram_get_web_app_url`)**: Added fallback to `messages.RequestMainWebViewRequest` when resolving bots with profile-attached Main Mini Apps (such as `@BotFather`, Telegram Wallet) where no inline message button is present. (Fixes #12)
+* **Start Parameter Deep Linking**: Added `start_param` argument to `telegram_get_web_app_url` to support testing deep-linked mini app routes.
 
 ---
 

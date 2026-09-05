@@ -119,6 +119,47 @@ class TestTelegramService(unittest.TestCase):
             self.assertEqual(res["id"], 55)
             self.assertEqual(res["text"], "Favorite color?")
 
+    def test_get_web_app_url_main_app(self):
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="target_entity")
+        mock_client.get_messages = AsyncMock(return_value=[])
+        mock_main_res = MagicMock()
+        mock_main_res.url = "https://twebappcontent.stel.com/testbot#tgWebAppData=123"
+        mock_client.side_effect = lambda req: mock_main_res
+
+        with patch.object(self.service, "_ensure_connected", return_value=mock_client):
+            res = asyncio.run(self.service.get_web_app_url("testbot"))
+            self.assertEqual(res["app_type"], "main_app")
+            self.assertEqual(res["web_app_url"], "https://twebappcontent.stel.com/testbot#tgWebAppData=123")
+            self.assertEqual(res["bot_username"], "@testbot")
+
+    def test_get_web_app_url_inline_button(self):
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="target_entity")
+        btn = MagicMock()
+        btn.text = "Open Game"
+        btn.url = None
+        btn_raw = MagicMock()
+        btn_raw.web_app = MagicMock()
+        btn_raw.web_app.url = "https://example.com/app"
+        btn.button = btn_raw
+
+        mock_msg = MagicMock()
+        mock_msg.id = 101
+        mock_msg.buttons = [[btn]]
+        mock_client.get_messages = AsyncMock(return_value=[mock_msg])
+
+        mock_res = MagicMock()
+        mock_res.url = "https://example.com/app#tgWebAppData=xyz"
+        mock_client.side_effect = lambda req: mock_res
+
+        with patch.object(self.service, "_ensure_connected", return_value=mock_client):
+            res = asyncio.run(self.service.get_web_app_url("testbot", button_text="Open Game"))
+            self.assertEqual(res["app_type"], "inline_button")
+            self.assertEqual(res["web_app_url"], "https://example.com/app#tgWebAppData=xyz")
+            self.assertEqual(res["button_text"], "Open Game")
+            self.assertEqual(res["message_id"], 101)
+
 
 if __name__ == "__main__":
     unittest.main()
