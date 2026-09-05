@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.7.0] — 2026-09-05 (20:39 IST)
+`[2026-09-05]{20:39:00} CI & Testing Infrastructure: Added GitHub Actions multi-version CI, unit test suite with mocks, secret leak detection, and Dependabot #CI pipeline`
+
+### 🚀 CI & Quality Assurance
+* **Automated GitHub Actions CI (`.github/workflows/ci.yml`)**: Automated pipeline testing across Python 3.10, 3.11, and 3.12.
+* **Mock Unit Test Suite (`tests/`)**: 100% offline unit tests for `TelegramService` and `server.py` verifying tool registration, message formatting, URL cleaning, and phone privacy masking.
+* **Credential Leak Guard**: Added CI check to prevent committing `.env` or sensitive credentials into git.
+* **Dependabot Configuration (`.github/dependabot.yml`)**: Automated weekly dependency security monitoring.
+* **Dev Dependencies (`requirements-dev.txt`)**: Clean separation of test and development tooling.
+
+---
+
 ## [v1.6.0] — 2026-09-05 (20:32 IST)
 `[2026-09-05]{20:32:00} v1.6.0 Release: Added drafts, scheduled messages, pinned filters, mute/unmute, chat export transcripts, member directory, contacts, peer resolver, and standalone wait_for #37 total MCP tools`
 

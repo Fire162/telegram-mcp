@@ -42,6 +42,8 @@ This guide documents the architecture, setup, development workflow, and conventi
 ## 3. Development Commands
 
 - **Install Dependencies**: `pip install -r requirements.txt`
+- **Install Dev / Test Dependencies**: `pip install -r requirements-dev.txt`
+- **Run Unit Tests**: `python3 -m pytest tests -v` or `python3 -m unittest discover -s tests`
 - **Login / Generate Session**: `python3 login.py`
 - **Run MCP Server**: `python3 server.py`
 

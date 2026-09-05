@@ -122,9 +122,11 @@ class TelegramService:
         self._release_process_lock()
 
     def _clean_bot_username(self, username: str) -> str:
-        target = username or os.environ.get("DEFAULT_TARGET_BOT", "")
+        target = (username or os.environ.get("DEFAULT_TARGET_BOT", "")).strip()
         if not target:
             raise ValueError("Bot username was not provided and DEFAULT_TARGET_BOT is not configured.")
+        if "t.me/" in target:
+            target = target.split("t.me/")[-1].strip()
         return target if (target.startswith("@") or target.startswith("-") or target.isdigit()) else f"@{target}"
 
     def _format_message(self, msg: custom.Message) -> Dict[str, Any]:

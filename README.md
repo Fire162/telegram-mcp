@@ -1,6 +1,7 @@
 # Telegram MCP 🤖🧪
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/Telegram-mcp/telegram-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Telegram-mcp/telegram-mcp/actions/workflows/ci.yml)
 [![MCP](https://img.shields.io/badge/MCP-Protocol-purple.svg)](https://modelcontextprotocol.io)
 [![Telethon](https://img.shields.io/badge/Telethon-MTProto-blue.svg)](https://github.com/LonamiWebs/Telethon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -35,8 +36,8 @@ A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as 
 ### 1. Clone & Install Dependencies
 
 ```bash
-git clone https://github.com/Fire162/telegram-bot-mcp.git
-cd telegram-bot-mcp
+git clone https://github.com/Telegram-mcp/telegram-mcp.git
+cd telegram-mcp
 pip install -r requirements.txt
 ```
 
@@ -157,6 +158,18 @@ Add to your `claude_desktop_config.json`:
 
 ---
 
+## 🔬 Running Unit Tests
+
+Run the test suite locally with `pytest` or Python's built-in `unittest`:
+
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest tests -v
+```
+
+---
+
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
