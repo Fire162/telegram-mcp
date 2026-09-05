@@ -69,8 +69,10 @@ class TestServerTools(unittest.TestCase):
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
+            "telegram_get_admin_log",
+            "telegram_edit_chat_info",
         ]
-        self.assertEqual(len(expected_tools), 60)
+        self.assertEqual(len(expected_tools), 62)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -321,6 +323,50 @@ class TestServerTools(unittest.TestCase):
             parsed = json.loads(raw)
             self.assertEqual(parsed["status"], "success")
             self.assertEqual(parsed["count"], 1)
+
+    def test_get_admin_log_tool(self):
+        import asyncio
+
+        mock_event = MagicMock()
+        mock_event.id = 101
+        mock_event.date.isoformat.return_value = "2026-09-05T12:00:00+00:00"
+        mock_event.user_id = 999
+        mock_event.action = MagicMock()
+        type(mock_event.action).__name__ = "ChannelAdminLogEventActionChangeTitle"
+        mock_event.old = "Old Title"
+        mock_event.new = "New Title"
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock()):
+            with patch.object(server.telegram_service, "get_admin_log", AsyncMock(return_value=[{
+                "id": 101,
+                "date": "2026-09-05T12:00:00+00:00",
+                "user_id": 999,
+                "action": "ChangeTitle",
+                "old": "Old Title",
+                "new": "New Title",
+            }])):
+                raw = asyncio.run(server.telegram_get_admin_log(chat_identifier="@mychannel"))
+                parsed = json.loads(raw)
+                self.assertEqual(parsed["status"], "success")
+                self.assertEqual(parsed["count"], 1)
+                self.assertEqual(parsed["events"][0]["action"], "ChangeTitle")
+
+    def test_edit_chat_info_tool(self):
+        import asyncio
+
+        with patch.object(server.telegram_service, "edit_chat_info", AsyncMock(return_value={
+            "success": True,
+            "chat": "@mychannel",
+            "updated_fields": {"title": "Brand New Title", "about": "Brand new bio"},
+        })):
+            raw = asyncio.run(server.telegram_edit_chat_info(
+                chat_identifier="@mychannel",
+                title="Brand New Title",
+                about="Brand new bio",
+            ))
+            parsed = json.loads(raw)
+            self.assertTrue(parsed["success"])
+            self.assertEqual(parsed["updated_fields"]["title"], "Brand New Title")
 
 
 if __name__ == "__main__":
