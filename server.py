@@ -1315,6 +1315,74 @@ async def telegram_create_invite_link(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_get_admin_log(
+    chat_identifier: str,
+    limit: int = 20,
+    query: Optional[str] = None,
+    join: Optional[bool] = None,
+    leave: Optional[bool] = None,
+    invite: Optional[bool] = None,
+    ban: Optional[bool] = None,
+    unban: Optional[bool] = None,
+    kick: Optional[bool] = None,
+    unkick: Optional[bool] = None,
+    promote: Optional[bool] = None,
+    demote: Optional[bool] = None,
+    info: Optional[bool] = None,
+    settings: Optional[bool] = None,
+    pinned: Optional[bool] = None,
+    edit: Optional[bool] = None,
+    delete: Optional[bool] = None,
+) -> str:
+    """
+    Retrieves the administrative action history of a supergroup or channel (kicks, bans, permission changes, title updates, message edits/deletions).
+    """
+    try:
+        events = await telegram_service.get_admin_log(
+            chat_identifier=chat_identifier,
+            limit=limit,
+            query=query,
+            join=join,
+            leave=leave,
+            invite=invite,
+            ban=ban,
+            unban=unban,
+            kick=kick,
+            unkick=unkick,
+            promote=promote,
+            demote=demote,
+            info=info,
+            settings=settings,
+            pinned=pinned,
+            edit=edit,
+            delete=delete,
+        )
+        return json.dumps({"status": "success", "count": len(events), "events": events}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_edit_chat_info(
+    chat_identifier: str,
+    title: Optional[str] = None,
+    about: Optional[str] = None,
+) -> str:
+    """
+    Updates the title or about/description of a group, supergroup, or broadcast channel.
+    """
+    try:
+        res = await telegram_service.edit_chat_info(
+            chat_identifier=chat_identifier,
+            title=title,
+            about=about,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

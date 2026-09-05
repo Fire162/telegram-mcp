@@ -1856,6 +1856,100 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             "admin_id": getattr(res, "admin_id", None),
         }
 
+    async def get_admin_log(
+        self,
+        chat_identifier: str,
+        limit: int = 20,
+        query: Optional[str] = None,
+        join: Optional[bool] = None,
+        leave: Optional[bool] = None,
+        invite: Optional[bool] = None,
+        ban: Optional[bool] = None,
+        unban: Optional[bool] = None,
+        kick: Optional[bool] = None,
+        unkick: Optional[bool] = None,
+        promote: Optional[bool] = None,
+        demote: Optional[bool] = None,
+        info: Optional[bool] = None,
+        settings: Optional[bool] = None,
+        pinned: Optional[bool] = None,
+        edit: Optional[bool] = None,
+        delete: Optional[bool] = None,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(chat_identifier)
+        try:
+            entity = await client.get_input_entity(target)
+        except Exception as e:
+            raise ValueError(f"Could not resolve chat '{target}': {e}")
+
+        if isinstance(entity, types.InputPeerChat) or isinstance(entity, types.InputPeerUser):
+            raise ValueError("Admin log is only available for supergroups and broadcast channels.")
+
+        kwargs = {
+            "limit": limit,
+            "search": query or None,
+            "join": join,
+            "leave": leave,
+            "invite": invite,
+            "ban": ban,
+            "unban": unban,
+            "kick": kick,
+            "unkick": unkick,
+            "promote": promote,
+            "demote": demote,
+            "info": info,
+            "settings": settings,
+            "pinned": pinned,
+            "edit": edit,
+            "delete": delete,
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+        events = await client.get_admin_log(entity, **kwargs)
+        results = []
+        for ev in events:
+            action_type = type(ev.action).__name__.replace("ChannelAdminLogEventAction", "")
+            results.append({
+                "id": ev.id,
+                "date": ev.date.isoformat() if getattr(ev, "date", None) else None,
+                "user_id": getattr(ev, "user_id", None),
+                "action": action_type,
+                "old": str(getattr(ev, "old", "")) if getattr(ev, "old", None) is not None else None,
+                "new": str(getattr(ev, "new", "")) if getattr(ev, "new", None) is not None else None,
+            })
+        return results
+
+    async def edit_chat_info(
+        self,
+        chat_identifier: str,
+        title: Optional[str] = None,
+        about: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(chat_identifier)
+        entity = await client.get_input_entity(target)
+
+        updated_fields = {}
+        if title:
+            try:
+                await client(functions.channels.EditTitleRequest(channel=entity, title=title))
+                updated_fields["title"] = title
+            except Exception:
+                chat_id = getattr(entity, "chat_id", target)
+                await client(functions.messages.EditChatTitleRequest(chat_id=chat_id, title=title))
+                updated_fields["title"] = title
+
+        if about is not None:
+            await client(functions.messages.EditChatAboutRequest(peer=entity, about=about))
+            updated_fields["about"] = about
+
+        return {
+            "success": True,
+            "chat": str(target),
+            "updated_fields": updated_fields,
+        }
+
 
 telegram_service = TelegramService()
 

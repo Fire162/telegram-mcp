@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.15.0] — 2026-09-05 (22:08 IST)
+`[2026-09-05]{22:08:00} v1.15.0 Release: Add admin event log inspection and edit chat info tools #62 total MCP tools`
+
+### 🚀 New Features
+* **Admin Event Log Inspection (`telegram_get_admin_log`)**: Inspects the administrative audit log of supergroups and broadcast channels (kicks, bans, permission changes, title updates, message edits/deletions) with optional keyword search and granular action filters. (Fixes #16)
+* **Chat Info Editor (`telegram_edit_chat_info`)**: Programmatically updates title or about/description for basic groups, supergroups, and channels.
+
+---
+
 ## [v1.14.0] — 2026-09-05 (21:32 IST)
 `[2026-09-05]{21:32:00} v1.14.0 Release: Fix GetDialogFiltersRequest response parsing and add chat folder creation/deletion #60 total MCP tools`
 
