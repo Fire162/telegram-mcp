@@ -63,54 +63,86 @@ The server exposes the following tools:
 
 1. `telegram_status`
    - **Arguments**: None
-   - **Usage**: Checks connection health, configuration flags, and active user metadata without throwing errors.
-
-2. `telegram_execute_code` *(Full Control Sandbox)*
-   - **Arguments**: `code` (string), `timeout_seconds` (default: `30`)
-   - **Environment Injected**:
-     - `client`: Live authenticated `Telethon.TelegramClient` instance (supports raw MTProto functions, event listeners, updates, etc.)
-     - `service` / `telegram_service`: `TelegramService` instance
-     - `events`: `telethon.events`
-     - `functions`, `types`: `telethon.tl.functions`, `telethon.tl.types`
-     - `asyncio`, `json`, `os`, `time`
-   - **Returns**: Captured `stdout`, `stderr`, `return_value`, `duration_seconds`, and error stack traces.
+   - **Usage**: Checks connection health, configuration flags, and active user metadata with masked phone number for privacy.
 
 2. `telegram_send_command`
    - **Arguments**: `bot_username`, `command`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
    - **Usage**: Sends a `/command` to the bot and returns the reply with inline keyboard buttons.
 
 3. `telegram_send_message`
-   - **Arguments**: `bot_username`, `text`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
-   - **Usage**: Sends arbitrary text messages or payloads to the bot.
+   - **Arguments**: `bot_username`, `text`, `reply_to_msg_id?`, `parse_mode?` (default: `"md"`), `wait_response` (default: `True`), `timeout_seconds` (default: `10`)
+   - **Usage**: Sends arbitrary text messages with Markdown/HTML formatting support.
 
-4. `telegram_send_file`
-   - **Arguments**: `bot_username`, `file_path`, `caption?`, `reply_to_msg_id?`, `wait_response` (default: `True`), `timeout_seconds` (default: `15`)
-   - **Usage**: Sends files, images, voice notes, or documents to the bot.
+4. `telegram_edit_message`
+   - **Arguments**: `bot_username`, `message_id`, `new_text`, `parse_mode?` (default: `"md"`)
+   - **Usage**: Edits a previously sent message by ID.
 
-5. `telegram_download_media`
-   - **Arguments**: `bot_username`, `message_id`, `output_dir?`
-   - **Usage**: Downloads media (photos, documents, audio) attached to a bot's message.
+5. `telegram_delete_messages`
+   - **Arguments**: `bot_username`, `message_ids`, `revoke?` (default: `True`)
+   - **Usage**: Deletes one or more messages by ID.
 
-6. `telegram_click_inline_button`
-   - **Arguments**: `bot_username`, `message_id?`, `button_text?`, `button_index?`, `wait_update` (default: `True`)
-   - **Usage**: Triggers callback queries on inline keyboard buttons attached to a bot message.
+6. `telegram_forward_messages`
+   - **Arguments**: `to_chat`, `from_chat`, `message_ids`
+   - **Usage**: Forwards messages from one chat to another.
 
-7. `telegram_inline_query`
-   - **Arguments**: `bot_username`, `query`
-   - **Usage**: Simulates typing `@bot query` in inline mode and inspects returned results.
+7. `telegram_send_reaction`
+   - **Arguments**: `bot_username`, `message_id`, `reaction`
+   - **Usage**: Sends an emoji reaction (👍, 🔥, ❤️, etc.) to a message.
 
-8. `telegram_send_and_verify`
-   - **Arguments**: `bot_username`, `input_text`, `expected_contains`, `timeout_seconds` (default: `10`)
-   - **Usage**: Single-step assertion check.
+8. `telegram_send_poll`
+   - **Arguments**: `bot_username`, `question`, `options`, `is_quiz?` (default: `False`), `correct_option_id?`
+   - **Usage**: Creates and sends native Telegram polls or quizzes.
 
-9. `telegram_run_test_suite`
-   - **Arguments**: `bot_username`, `steps`
-   - **Usage**: Executes multi-step test workflows with `sleep`, `assert_reply`, `send_file`, and `click_button`.
+9. `telegram_mark_chat_read`
+   - **Arguments**: `bot_username`, `max_id?`
+   - **Usage**: Marks messages in a chat as read.
 
-10. `telegram_get_chat_history`
+10. `telegram_list_dialogs`
+    - **Arguments**: `limit?` (default: `20`)
+    - **Usage**: Lists recent chats, groups, bots, and channels with unread counts and last messages.
+
+11. `telegram_search_messages`
+    - **Arguments**: `bot_username`, `query`, `limit?` (default: `20`)
+    - **Usage**: Searches message history within a specific chat by keyword.
+
+12. `telegram_click_inline_button`
+    - **Arguments**: `bot_username`, `message_id?`, `button_text?`, `button_index?`, `wait_update` (default: `True`)
+    - **Usage**: Triggers callback queries on inline keyboard buttons attached to a bot message.
+
+13. `telegram_send_file`
+    - **Arguments**: `bot_username`, `file_path`, `caption?`, `reply_to_msg_id?`, `voice_note?` (default: `False`), `wait_response` (default: `True`), `timeout_seconds` (default: `15`)
+    - **Usage**: Sends files, images, voice notes (circular), or documents to the bot.
+
+14. `telegram_download_media`
+    - **Arguments**: `bot_username`, `message_id`, `output_dir?`
+    - **Usage**: Downloads media (photos, documents, audio) attached to a bot's message.
+
+15. `telegram_inline_query`
+    - **Arguments**: `bot_username`, `query`
+    - **Usage**: Simulates typing `@bot query` in inline mode and inspects returned results.
+
+16. `telegram_send_and_verify`
+    - **Arguments**: `bot_username`, `input_text`, `expected_contains`, `timeout_seconds` (default: `10`)
+    - **Usage**: Single-step assertion check.
+
+17. `telegram_run_test_suite`
+    - **Arguments**: `bot_username`, `steps`
+    - **Usage**: Executes multi-step test workflows with `sleep`, `assert_reply`, `send_file`, and `click_button`.
+
+18. `telegram_execute_code` *(Full Control Sandbox)*
+    - **Arguments**: `code` (string), `timeout_seconds` (default: `30`)
+    - **Environment Injected**:
+      - `client`: Live authenticated `Telethon.TelegramClient` instance (supports raw MTProto functions, event listeners, updates, etc.)
+      - `service` / `telegram_service`: `TelegramService` instance
+      - `events`: `telethon.events`
+      - `functions`, `types`: `telethon.tl.functions`, `telethon.tl.types`
+      - `asyncio`, `json`, `os`, `time`
+    - **Returns**: Captured `stdout`, `stderr`, `return_value`, `duration_seconds`, and error stack traces.
+
+19. `telegram_get_chat_history`
     - **Arguments**: `bot_username`, `limit` (default: `10`)
     - **Usage**: Retrieves recent messages, media info, and button metadata.
 
-11. `telegram_clear_chat`
+20. `telegram_clear_chat`
     - **Arguments**: `bot_username`
     - **Usage**: Deletes dialog history for clean testing states.

@@ -144,14 +144,20 @@ async def telegram_send_message(
     bot_username: str,
     text: str,
     reply_to_msg_id: Optional[int] = None,
+    parse_mode: Optional[str] = "md",
     wait_response: bool = True,
     timeout_seconds: int = 10,
 ) -> str:
     """
-    Sends a text message or payload to the target bot or chat.
+    Sends a text message or payload to the target bot or chat. Supports Markdown ('md') or HTML ('html') formatting.
     """
     try:
-        sent = await telegram_service.send_message(bot_username, text, reply_to_msg_id)
+        sent = await telegram_service.send_message(
+            bot_username=bot_username,
+            text=text,
+            reply_to_msg_id=reply_to_msg_id,
+            parse_mode=parse_mode,
+        )
         response = None
         if wait_response:
             response = await telegram_service.wait_for_reply(
@@ -178,11 +184,13 @@ async def telegram_send_file(
     file_path: str,
     caption: Optional[str] = None,
     reply_to_msg_id: Optional[int] = None,
+    voice_note: bool = False,
     wait_response: bool = True,
     timeout_seconds: int = 15,
 ) -> str:
     """
     Sends a file, photo, document, voice note, or media to the bot and optionally waits for its response.
+    Set voice_note=True to send audio as a circular/native Telegram voice message.
     """
     try:
         sent = await telegram_service.send_file(
@@ -190,6 +198,7 @@ async def telegram_send_file(
             file_path=file_path,
             caption=caption,
             reply_to_msg_id=reply_to_msg_id,
+            voice_note=voice_note,
         )
         response = None
         if wait_response:
@@ -391,6 +400,157 @@ async def telegram_clear_chat(
             },
             indent=2,
         )
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_edit_message(
+    bot_username: str,
+    message_id: int,
+    new_text: str,
+    parse_mode: Optional[str] = "md",
+) -> str:
+    """
+    Edits a previously sent message by ID. Useful for testing bot interactions that monitor message edits.
+    """
+    try:
+        res = await telegram_service.edit_message(
+            bot_username=bot_username,
+            message_id=message_id,
+            new_text=new_text,
+            parse_mode=parse_mode,
+        )
+        return json.dumps({"status": "success", "edited_message": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_delete_messages(
+    bot_username: str,
+    message_ids: List[int],
+    revoke: bool = True,
+) -> str:
+    """
+    Deletes one or more messages by ID. Set revoke=True to delete for all participants.
+    """
+    try:
+        res = await telegram_service.delete_messages(
+            bot_username=bot_username,
+            message_ids=message_ids,
+            revoke=revoke,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_forward_messages(
+    to_chat: str,
+    from_chat: str,
+    message_ids: List[int],
+) -> str:
+    """
+    Forwards messages from one chat to another. Useful for testing bots that verify forwarded content or proofs.
+    """
+    try:
+        res = await telegram_service.forward_messages(
+            to_chat=to_chat,
+            from_chat=from_chat,
+            message_ids=message_ids,
+        )
+        return json.dumps({"status": "success", "forwarded_count": len(res), "messages": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_send_reaction(
+    bot_username: str,
+    message_id: int,
+    reaction: str,
+) -> str:
+    """
+    Sends an emoji reaction (e.g. '👍', '🔥', '❤️', '🎉') to a specific message, or clears it if reaction is empty.
+    """
+    try:
+        res = await telegram_service.send_reaction(
+            bot_username=bot_username,
+            message_id=message_id,
+            reaction=reaction,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_send_poll(
+    bot_username: str,
+    question: str,
+    options: List[str],
+    is_quiz: bool = False,
+    correct_option_id: Optional[int] = None,
+) -> str:
+    """
+    Creates and sends a native Telegram poll or quiz to the target bot or chat.
+    """
+    try:
+        res = await telegram_service.send_poll(
+            bot_username=bot_username,
+            question=question,
+            options=options,
+            is_quiz=is_quiz,
+            correct_option_id=correct_option_id,
+        )
+        return json.dumps({"status": "success", "sent_poll": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_mark_chat_read(
+    bot_username: str,
+    max_id: Optional[int] = None,
+) -> str:
+    """
+    Marks messages in a chat or dialog as read up to max_id (or all messages if omitted).
+    """
+    try:
+        res = await telegram_service.mark_chat_read(bot_username=bot_username, max_id=max_id)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_list_dialogs(
+    limit: int = 20,
+) -> str:
+    """
+    Lists recent dialogs, conversations, groups, and channels with their IDs, names, unread counts, and last messages.
+    """
+    try:
+        dialogs = await telegram_service.list_dialogs(limit=limit)
+        return json.dumps({"status": "success", "count": len(dialogs), "dialogs": dialogs}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_search_messages(
+    bot_username: str,
+    query: str,
+    limit: int = 20,
+) -> str:
+    """
+    Searches message history within a specific chat or bot by text query keyword.
+    """
+    try:
+        msgs = await telegram_service.search_messages(bot_username=bot_username, query=query, limit=limit)
+        return json.dumps({"status": "success", "query": query, "count": len(msgs), "messages": msgs}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 

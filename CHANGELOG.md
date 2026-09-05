@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.4.0] — 2026-09-05 (20:15 IST)
+
+### 🚀 New Features
+* **Message Editing & Deletion**: Added `telegram_edit_message` and `telegram_delete_messages` for automated message mutation and teardown.
+* **Message Forwarding**: Added `telegram_forward_messages` to test bots handling forwarded media and verification proofs.
+* **Emoji Reactions**: Added `telegram_send_reaction` to send or clear emoji reactions on messages (`👍`, `🔥`, `❤️`, etc.).
+* **Poll & Quiz Dispatch**: Added `telegram_send_poll` to generate and send native Telegram polls and quizzes.
+* **Dialog & Chat Management**: Added `telegram_list_dialogs` to list recent chats and unread counts, and `telegram_mark_chat_read` to acknowledge messages.
+* **Chat Search**: Added `telegram_search_messages` to search message history by keyword.
+* **Formatting & Voice Notes**: Added `parse_mode` (`"md"`/`"html"`) support in `telegram_send_message` and `voice_note` flag in `telegram_send_file`.
+* **Privacy Protection**: Phone numbers in `telegram_status` are now masked automatically.
+
+---
+
 ## [v1.3.0] — 2026-09-05 (17:45 IST)
 
 ### 🛡️ Session Protection

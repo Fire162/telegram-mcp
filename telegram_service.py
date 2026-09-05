@@ -177,6 +177,7 @@ class TelegramService:
         bot_username: str,
         text: str,
         reply_to_msg_id: Optional[int] = None,
+        parse_mode: Optional[str] = "md",
     ) -> Dict[str, Any]:
         client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
@@ -185,8 +186,163 @@ class TelegramService:
             target,
             text,
             reply_to=reply_to_msg_id,
+            parse_mode=parse_mode,
         )
         return self._format_message(sent)
+
+    async def edit_message(
+        self,
+        bot_username: str,
+        message_id: int,
+        new_text: str,
+        parse_mode: Optional[str] = "md",
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+
+        edited = await client.edit_message(
+            target,
+            message_id,
+            new_text,
+            parse_mode=parse_mode,
+        )
+        return self._format_message(edited)
+
+    async def delete_messages(
+        self,
+        bot_username: str,
+        message_ids: List[int],
+        revoke: bool = True,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        res = await client.delete_messages(entity, message_ids, revoke=revoke)
+        return {
+            "success": True,
+            "deleted_count": len(res) if isinstance(res, list) else len(message_ids),
+            "message_ids": message_ids,
+        }
+
+    async def forward_messages(
+        self,
+        to_chat: str,
+        from_chat: str,
+        message_ids: List[int],
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target_to = self._clean_bot_username(to_chat)
+        target_from = self._clean_bot_username(from_chat)
+
+        forwarded = await client.forward_messages(
+            target_to,
+            message_ids,
+            target_from,
+        )
+        if not isinstance(forwarded, list):
+            forwarded = [forwarded]
+        return [self._format_message(m) for m in forwarded]
+
+    async def send_reaction(
+        self,
+        bot_username: str,
+        message_id: int,
+        reaction: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        emojis = [types.ReactionEmoji(emoticon=reaction)] if reaction else []
+        await client(functions.messages.SendReactionRequest(
+            peer=entity,
+            msg_id=message_id,
+            reaction=emojis,
+        ))
+        return {
+            "success": True,
+            "message_id": message_id,
+            "reaction": reaction or "(cleared)",
+        }
+
+    async def send_poll(
+        self,
+        bot_username: str,
+        question: str,
+        options: List[str],
+        is_quiz: bool = False,
+        correct_option_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        import random
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+
+        poll = types.Poll(
+            id=random.randint(0, 2**63 - 1),
+            question=types.TextWithEntities(text=question, entities=[]),
+            answers=[
+                types.PollAnswer(text=types.TextWithEntities(text=opt, entities=[]), option=bytes([i]))
+                for i, opt in enumerate(options)
+            ],
+            quiz=is_quiz,
+        )
+        correct_answers = [bytes([correct_option_id])] if is_quiz and correct_option_id is not None else None
+        media = types.InputMediaPoll(poll=poll, correct_answers=correct_answers)
+
+        sent = await client.send_message(target, file=media)
+        return self._format_message(sent)
+
+    async def mark_chat_read(
+        self,
+        bot_username: str,
+        max_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client.send_read_acknowledge(entity, max_id=max_id)
+        return {
+            "success": True,
+            "chat": target,
+            "max_id": max_id,
+        }
+
+    async def list_dialogs(
+        self,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        dialogs = await client.get_dialogs(limit=limit)
+
+        result = []
+        for d in dialogs:
+            result.append({
+                "id": d.id,
+                "name": d.name,
+                "title": d.title,
+                "is_user": d.is_user,
+                "is_group": d.is_group,
+                "is_channel": d.is_channel,
+                "unread_count": d.unread_count,
+                "date": d.date.isoformat() if d.date else None,
+                "last_message": d.message.text[:100] if (d.message and d.message.text) else None,
+            })
+        return result
+
+    async def search_messages(
+        self,
+        bot_username: str,
+        query: str,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        messages = await client.get_messages(entity, search=query, limit=limit)
+        return [self._format_message(m) for m in messages]
 
     async def send_file(
         self,
@@ -194,6 +350,7 @@ class TelegramService:
         file_path: str,
         caption: Optional[str] = None,
         reply_to_msg_id: Optional[int] = None,
+        voice_note: bool = False,
     ) -> Dict[str, Any]:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -206,6 +363,7 @@ class TelegramService:
             file_path,
             caption=caption,
             reply_to=reply_to_msg_id,
+            voice_note=voice_note,
         )
         return self._format_message(sent)
 

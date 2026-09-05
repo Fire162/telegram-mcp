@@ -104,9 +104,17 @@ Add to your `claude_desktop_config.json`:
 | :--- | :--- | :--- |
 | `telegram_status` | _None_ | Checks connection health, environment, and user info with masked phone for privacy. |
 | `telegram_send_command` | `bot_username`, `command`, `wait_response?`, `timeout_seconds?` | Sends a command and waits for reply. |
-| `telegram_send_message` | `bot_username`, `text`, `reply_to_msg_id?`, `wait_response?` | Sends text payloads or queries. |
+| `telegram_send_message` | `bot_username`, `text`, `reply_to_msg_id?`, `parse_mode?`, `wait_response?` | Sends text payloads or queries with Markdown/HTML formatting. |
+| `telegram_edit_message` | `bot_username`, `message_id`, `new_text`, `parse_mode?` | Edits a previously sent message by ID. |
+| `telegram_delete_messages` | `bot_username`, `message_ids`, `revoke?` | Deletes messages by ID for clean teardown. |
+| `telegram_forward_messages` | `to_chat`, `from_chat`, `message_ids` | Forwards messages from one chat/bot to another. |
+| `telegram_send_reaction` | `bot_username`, `message_id`, `reaction` | Sends an emoji reaction (👍, 🔥, ❤️, etc.) to a message. |
+| `telegram_send_poll` | `bot_username`, `question`, `options`, `is_quiz?`, `correct_option_id?` | Sends native polls or quizzes. |
+| `telegram_mark_chat_read` | `bot_username`, `max_id?` | Marks dialog history as read. |
+| `telegram_list_dialogs` | `limit?` | Lists recent chats, groups, bots, and channels with unread counts. |
+| `telegram_search_messages` | `bot_username`, `query`, `limit?` | Searches message history by text query keyword. |
 | `telegram_click_inline_button` | `bot_username`, `message_id?`, `button_text?`, `button_index?` | Clicks inline buttons and returns updated message state. |
-| `telegram_send_file` | `bot_username`, `file_path`, `caption?` | Uploads images/documents/audio. |
+| `telegram_send_file` | `bot_username`, `file_path`, `caption?`, `voice_note?` | Uploads images/documents/audio (or circular voice notes). |
 | `telegram_download_media` | `bot_username`, `message_id`, `output_dir?` | Downloads media from bot messages. |
 | `telegram_inline_query` | `bot_username`, `query` | Performs inline queries (`@bot query`). |
 | `telegram_send_and_verify` | `bot_username`, `input_text`, `expected_contains` | Convenience single-step assertion. |
