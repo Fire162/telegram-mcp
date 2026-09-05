@@ -45,3 +45,8 @@
 - `telegram_get_contacts(query, limit)`: Retrieves saved Telegram contacts with privacy-masked phone numbers.
 - `telegram_resolve_peer(peer)`: Resolves any username, phone, or ID to full entity metadata.
 - `telegram_wait_for(bot_username, text_contains, after_message_id, target_message_id, wait_for_edit, timeout_seconds, poll_interval)`: Explicitly waits for incoming bot replies or message edits.
+- `telegram_get_web_app_url(bot_username, message_id, button_text, button_index)`: Extracts authenticated Web App launch URLs from Telegram Mini App buttons for frontend testing.
+- `telegram_click_reply_button(bot_username, button_text, button_index, wait_response, timeout_seconds)`: Clicks buttons in persistent bottom reply keyboards and dispatches user actions.
+- `telegram_send_chat_action(bot_username, action)`: Broadcasts chat presence indicators ('typing', 'upload_photo', etc.).
+- `telegram_join_chat(chat_identifier)`: Joins a public channel/supergroup or private chat via invite link.
+- `telegram_leave_chat(chat_identifier)`: Leaves a channel or group by username or ID.

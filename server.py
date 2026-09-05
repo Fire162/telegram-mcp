@@ -858,6 +858,97 @@ async def telegram_wait_for(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_get_web_app_url(
+    bot_username: str,
+    message_id: Optional[int] = None,
+    button_text: Optional[str] = None,
+    button_index: Optional[int] = None,
+) -> str:
+    """
+    Extracts the authenticated Web App launch URL from a Telegram Mini App button.
+    The resulting URL can be passed to Playwright or a browser automation tool to test the frontend UI.
+    """
+    try:
+        res = await telegram_service.get_web_app_url(
+            bot_username=bot_username,
+            message_id=message_id,
+            button_text=button_text,
+            button_index=button_index,
+        )
+        return json.dumps({"status": "success", "web_app": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_click_reply_button(
+    bot_username: str,
+    button_text: Optional[str] = None,
+    button_index: Optional[int] = None,
+    wait_response: bool = True,
+    timeout_seconds: int = 15,
+) -> str:
+    """
+    Clicks an active persistent reply keyboard button (bottom screen menu keyboard) by text or index.
+    Dispatches the button selection and optionally waits for the bot's response.
+    """
+    try:
+        res = await telegram_service.click_reply_button(
+            bot_username=bot_username,
+            button_text=button_text,
+            button_index=button_index,
+            wait_response=wait_response,
+            timeout_seconds=timeout_seconds,
+        )
+        return json.dumps({"status": "success", "response": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_send_chat_action(
+    bot_username: str,
+    action: str = "typing",
+) -> str:
+    """
+    Broadcasts a presence action indicator (e.g. 'typing', 'upload_photo', 'record_video', 'record_voice', 'choose_sticker', 'cancel').
+    """
+    try:
+        res = await telegram_service.send_chat_action(bot_username=bot_username, action=action)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_join_chat(
+    chat_identifier: str,
+) -> str:
+    """
+    Joins a public channel/supergroup via @username or a private chat via invite link (t.me/+...).
+    """
+    try:
+        res = await telegram_service.join_chat(chat_identifier=chat_identifier)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_leave_chat(
+    chat_identifier: str,
+) -> str:
+    """
+    Leaves a channel or supergroup by username or ID.
+    """
+    try:
+        res = await telegram_service.leave_chat(chat_identifier=chat_identifier)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

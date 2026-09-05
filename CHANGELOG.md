@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.8.0] — 2026-09-05 (20:43 IST)
+`[2026-09-05]{20:43:00} v1.8.0 Release: Added Mini App WebApp URL extraction, persistent reply keyboard clicking, chat actions, group join/leave, and HTTP URL file dispatch #42 total MCP tools`
+
+### 🚀 New Features
+* **Telegram Mini App Testing (`telegram_get_web_app_url`)**: Extracts authenticated Web App launch URLs from Mini App buttons for frontend testing via Playwright / browser tools.
+* **Persistent Reply Keyboard Clicking (`telegram_click_reply_button`)**: Clicks buttons in bottom-screen persistent menus (`ReplyKeyboardMarkup`) and dispatches selections.
+* **Presence & Chat Actions (`telegram_send_chat_action`)**: Broadcasts typing and upload indicators (`typing`, `upload_photo`, `record_video`, `upload_document`, etc.).
+* **Channel & Group Management (`telegram_join_chat`, `telegram_leave_chat`)**: Joins public channels or private chats via invite links, and cleanly leaves chats.
+* **Direct Web URL Media Dispatch**: `telegram_send_file` and `telegram_send_album` now directly stream external HTTP/HTTPS URLs without requiring local file saving.
+
+---
+
 ## [v1.7.0] — 2026-09-05 (20:39 IST)
 `[2026-09-05]{20:39:00} CI & Testing Infrastructure: Added GitHub Actions multi-version CI, unit test suite with mocks, secret leak detection, and Dependabot #CI pipeline`
 

@@ -42,12 +42,17 @@ class TestServerTools(unittest.TestCase):
             "telegram_get_contacts",
             "telegram_resolve_peer",
             "telegram_wait_for",
+            "telegram_get_web_app_url",
+            "telegram_click_reply_button",
+            "telegram_send_chat_action",
+            "telegram_join_chat",
+            "telegram_leave_chat",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 37)
+        self.assertEqual(len(expected_tools), 42)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 

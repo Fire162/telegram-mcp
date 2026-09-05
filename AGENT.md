@@ -216,3 +216,23 @@ The server exposes the following tools:
 37. `telegram_wait_for`
     - **Arguments**: `bot_username`, `text_contains?`, `after_message_id?`, `target_message_id?`, `wait_for_edit?` (default: `False`), `timeout_seconds` (default: `30`), `poll_interval` (default: `1.0`)
     - **Usage**: Explicitly waits for an asynchronous bot response, incoming text match, or message edit/progress update.
+
+38. `telegram_get_web_app_url`
+    - **Arguments**: `bot_username`, `message_id?`, `button_text?`, `button_index?`
+    - **Usage**: Extracts the authenticated Web App launch URL from a Telegram Mini App button for browser/Playwright testing.
+
+39. `telegram_click_reply_button`
+    - **Arguments**: `bot_username`, `button_text?`, `button_index?`, `wait_response?` (default: `True`), `timeout_seconds` (default: `15`)
+    - **Usage**: Clicks buttons in persistent bottom reply keyboards (`ReplyKeyboardMarkup`).
+
+40. `telegram_send_chat_action`
+    - **Arguments**: `bot_username`, `action?` (default: `"typing"`)
+    - **Usage**: Broadcasts chat presence indicators (`"typing"`, `"upload_photo"`, `"record_video"`, etc.).
+
+41. `telegram_join_chat`
+    - **Arguments**: `chat_identifier`
+    - **Usage**: Joins a public channel/supergroup via `@username` or private chat via invite link (`t.me/+...`).
+
+42. `telegram_leave_chat`
+    - **Arguments**: `chat_identifier`
+    - **Usage**: Leaves a channel or supergroup by username or ID.

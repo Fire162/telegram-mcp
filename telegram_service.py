@@ -355,7 +355,8 @@ class TelegramService:
         reply_to_msg_id: Optional[int] = None,
         voice_note: bool = False,
     ) -> Dict[str, Any]:
-        if not os.path.exists(file_path):
+        is_url = file_path.startswith("http://") or file_path.startswith("https://")
+        if not is_url and not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
         client = await self._ensure_connected()
@@ -759,7 +760,8 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         target = self._clean_bot_username(bot_username)
 
         for p in file_paths:
-            if not os.path.exists(p):
+            is_url = p.startswith("http://") or p.startswith("https://")
+            if not is_url and not os.path.exists(p):
                 raise FileNotFoundError(f"File not found: {p}")
 
         sent = await client.send_file(target, file_paths, caption=caption)
@@ -1075,6 +1077,177 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             "matched": False,
             "message": f"Timed out after {timeout_seconds}s waiting for matching message from {target}",
         }
+
+    async def get_web_app_url(
+        self,
+        bot_username: str,
+        message_id: Optional[int] = None,
+        button_text: Optional[str] = None,
+        button_index: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        msg = None
+        if message_id is not None:
+            msgs = await client.get_messages(entity, ids=[message_id])
+            if msgs and msgs[0]:
+                msg = msgs[0]
+        else:
+            messages = await client.get_messages(entity, limit=5)
+            for m in messages:
+                if m.buttons:
+                    msg = m
+                    break
+
+        if not msg or not msg.buttons:
+            raise ValueError(f"No message with buttons found in {target} (message_id: {message_id})")
+
+        found_button = None
+        if button_text:
+            text_clean = button_text.lower().strip()
+            for row in msg.buttons:
+                for b in row:
+                    if text_clean in (b.text or "").lower():
+                        found_button = b
+                        break
+                if found_button:
+                    break
+        elif button_index is not None:
+            flat = [b for row in msg.buttons for b in row]
+            if 0 <= button_index < len(flat):
+                found_button = flat[button_index]
+        else:
+            found_button = msg.buttons[0][0]
+
+        if not found_button:
+            raise ValueError(f"Button not found on message {msg.id}")
+
+        btn_raw = getattr(found_button, "button", found_button)
+        web_app_url = getattr(found_button, "url", None)
+        web_app_info = getattr(btn_raw, "web_app", None)
+        if web_app_info and hasattr(web_app_info, "url"):
+            web_app_url = web_app_info.url
+
+        request_url = None
+        bot_user = await client.get_input_entity(target)
+        try:
+            res = await client(
+                functions.messages.RequestWebViewRequest(
+                    peer=entity,
+                    bot=bot_user,
+                    platform="android",
+                    url=web_app_url,
+                )
+            )
+            if hasattr(res, "url"):
+                request_url = res.url
+        except Exception:
+            pass
+
+        final_url = request_url or web_app_url or getattr(found_button, "url", None)
+        return {
+            "button_text": getattr(found_button, "text", ""),
+            "web_app_url": final_url,
+            "raw_url": getattr(found_button, "url", None),
+            "message_id": msg.id,
+            "bot_username": target,
+        }
+
+    async def click_reply_button(
+        self,
+        bot_username: str,
+        button_text: Optional[str] = None,
+        button_index: Optional[int] = None,
+        wait_response: bool = True,
+        timeout_seconds: int = 15,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        messages = await client.get_messages(entity, limit=10)
+        target_btn_text = None
+
+        for m in messages:
+            if m.reply_markup and hasattr(m.reply_markup, "rows"):
+                flat_buttons = []
+                for row in m.reply_markup.rows:
+                    if hasattr(row, "buttons"):
+                        flat_buttons.extend(row.buttons)
+
+                if button_text:
+                    query = button_text.lower().strip()
+                    for btn in flat_buttons:
+                        if query in (btn.text or "").lower():
+                            target_btn_text = btn.text
+                            break
+                elif button_index is not None and 0 <= button_index < len(flat_buttons):
+                    target_btn_text = flat_buttons[button_index].text
+                elif flat_buttons:
+                    target_btn_text = flat_buttons[0].text
+
+                if target_btn_text:
+                    break
+
+        if not target_btn_text:
+            raise ValueError(f"No matching reply keyboard button found in {target}")
+
+        return await self.send_message(
+            bot_username=bot_username,
+            text=target_btn_text,
+            wait_response=wait_response,
+            timeout_seconds=timeout_seconds,
+        )
+
+    async def send_chat_action(
+        self,
+        bot_username: str,
+        action: str = "typing",
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        action_clean = action.lower().strip()
+        action_map = {
+            "typing": types.SendMessageTypingAction(),
+            "upload_photo": types.SendMessageUploadPhotoAction(progress=50),
+            "record_video": types.SendMessageRecordVideoAction(),
+            "upload_video": types.SendMessageUploadVideoAction(progress=50),
+            "record_voice": types.SendMessageRecordAudioAction(),
+            "upload_document": types.SendMessageUploadDocumentAction(progress=50),
+            "choose_sticker": types.SendMessageChooseStickerAction(),
+            "cancel": types.SendMessageCancelAction(),
+        }
+        tl_action = action_map.get(action_clean, types.SendMessageTypingAction())
+        await client(functions.messages.SetTypingRequest(peer=entity, action=tl_action))
+        return {"success": True, "target": target, "action": action_clean}
+
+    async def join_chat(self, chat_identifier: str) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        raw = chat_identifier.strip()
+        if "t.me/+" in raw or "joinchat" in raw:
+            hash_str = raw.split("+")[-1] if "+" in raw else raw.split("joinchat/")[-1]
+            hash_str = hash_str.split("?")[0].strip()
+            await client(functions.messages.ImportChatInviteRequest(hash=hash_str))
+            return {"success": True, "type": "invite_link", "target": raw}
+        else:
+            clean_target = self._clean_bot_username(raw)
+            entity = await client.get_input_entity(clean_target)
+            await client(functions.channels.JoinChannelRequest(channel=entity))
+            return {"success": True, "type": "public_channel", "target": clean_target}
+
+    async def leave_chat(self, chat_identifier: str) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        clean_target = self._clean_bot_username(chat_identifier)
+        entity = await client.get_input_entity(clean_target)
+        try:
+            await client(functions.channels.LeaveChannelRequest(channel=entity))
+        except Exception:
+            await client.delete_dialog(entity)
+        return {"success": True, "left_chat": clean_target}
 
 
 telegram_service = TelegramService()
