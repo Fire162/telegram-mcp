@@ -315,6 +315,15 @@ class TestServerTools(unittest.TestCase):
             self.assertEqual(parsed["link"], "https://t.me/+AbCdEfGh1234")
             self.assertEqual(parsed["usage_limit"], 25)
 
+    def test_get_chat_members_chat_identifier(self):
+        import asyncio
+
+        with patch.object(server.telegram_service, "get_chat_members", AsyncMock(return_value=[{"id": 123, "name": "Alice"}])):
+            raw = asyncio.run(server.telegram_get_chat_members(chat_identifier="-10012345678"))
+            parsed = json.loads(raw)
+            self.assertEqual(parsed["status"], "success")
+            self.assertEqual(parsed["count"], 1)
+
     def test_get_admin_log_tool(self):
         import asyncio
 
