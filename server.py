@@ -893,9 +893,10 @@ async def telegram_get_web_app_url(
     message_id: Optional[int] = None,
     button_text: Optional[str] = None,
     button_index: Optional[int] = None,
+    start_param: Optional[str] = None,
 ) -> str:
     """
-    Extracts the authenticated Web App launch URL from a Telegram Mini App button.
+    Extracts the authenticated Web App launch URL from a Telegram bot's Main Mini App or inline button.
     The resulting URL can be passed to Playwright or a browser automation tool to test the frontend UI.
     """
     try:
@@ -904,6 +905,7 @@ async def telegram_get_web_app_url(
             message_id=message_id,
             button_text=button_text,
             button_index=button_index,
+            start_param=start_param,
         )
         return json.dumps({"status": "success", "web_app": res}, indent=2)
     except Exception as e:

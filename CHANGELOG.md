@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.14.1] — 2026-09-05 (21:44 IST)
+`[2026-09-05]{21:44:00} Fix get_web_app_url to support bot Main Mini Apps and deep linking start_param #fixes #12`
+
+### 🐛 Bug Fixes
+* **Main Mini App Resolution (`telegram_get_web_app_url`)**: Added fallback to `messages.RequestMainWebViewRequest` when resolving bots with profile-attached Main Mini Apps (such as `@BotFather`, Telegram Wallet) where no inline message button is present. (Fixes #12)
+* **Start Parameter Deep Linking**: Added `start_param` argument to `telegram_get_web_app_url` to support testing deep-linked mini app routes.
+
+---
+
 ## [v1.14.0] — 2026-09-05 (21:32 IST)
 `[2026-09-05]{21:32:00} v1.14.0 Release: Fix GetDialogFiltersRequest response parsing and add chat folder creation/deletion #60 total MCP tools`
 
