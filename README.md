@@ -35,18 +35,25 @@ A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as 
 
 ### Option A: 🤖 Automated Setup via AI Agent (Recommended)
 
-If you are using an AI coding agent (**Antigravity**, **Claude Code**, **Cursor**, **Cline**, **Roo Code**, or **Windsurf**), paste this prompt into your agent and let it handle installation, credentials, login, and MCP client registration:
+Whether you are starting from scratch or already working inside an existing project, you can paste this prompt into your AI agent (**Cursor**, **Claude Code**, **Antigravity**, **Cline**, **Roo Code**, or **Windsurf**). The agent will clone the repository, install dependencies, prompt you for credentials, handle login verification, and register the MCP server in your AI client:
 
 > [!TIP]
 > **Copy-Paste Prompt for your AI Assistant:**
 >
 > ```text
-> Set up the Telegram MCP server in this project for me:
-> 1. Ensure Python 3.10+ is available and install dependencies with `pip install -r requirements.txt`.
-> 2. Check if `.env` exists. If not, copy `.env.example` to `.env`. Prompt me for my Telegram `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` (from https://my.telegram.org), and ask whether I prefer the Test Server (`TELEGRAM_TEST_MODE=true`, recommended for safe testing) or Production (`false`).
-> 3. Guide me through running `python3 login.py` to authenticate and save `TELEGRAM_SESSION` into `.env`.
-> 4. Register this MCP server in my agent's MCP configuration (running `python3` with the absolute path to `server.py` and the environment variables from `.env`).
-> 5. Verify that the MCP server starts cleanly and reports a healthy connection.
+> Set up the Telegram MCP server for me:
+> 1. Clone & Navigate: Check if the repository is already present; if not, clone it from GitHub and enter the directory:
+>    git clone https://github.com/Telegram-mcp/telegram-mcp.git
+>    cd telegram-mcp
+> 2. Dependencies: Ensure Python 3.10+ is available and install dependencies:
+>    pip install -r requirements.txt
+> 3. Configuration: If `.env` does not exist, copy `.env.example` to `.env`. Prompt me for my Telegram `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` (obtained from https://my.telegram.org), and ask whether I prefer the Test Server (`TELEGRAM_TEST_MODE=true`, recommended for safe testing) or Production (`false`).
+> 4. Telegram Login: Run `python3 login.py` interactively so I can enter my phone number and Telegram verification code. This generates and saves `TELEGRAM_SESSION` into `.env`.
+> 5. MCP Registration: Register this MCP server in my AI client configuration (e.g. Claude Desktop, Cursor, Cline, Roo Code, Windsurf, or Antigravity):
+>    - Command: `python3`
+>    - Args: `["<absolute-path-to-telegram-mcp>/server.py"]`
+>    - Environment: load from `.env` or inject the credentials from `.env`
+> 6. Verification: Start the MCP server or check its status to verify that the connection is healthy and all tools are loaded.
 > ```
 
 ---
