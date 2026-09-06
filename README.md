@@ -31,9 +31,29 @@ A Model Context Protocol (**MCP**) server that allows AI Coding Agents (such as 
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Setup & Installation
 
-### 1. Clone & Install Dependencies
+### Option A: 🤖 Automated Setup via AI Agent (Recommended)
+
+If you are using an AI coding agent (**Antigravity**, **Claude Code**, **Cursor**, **Cline**, **Roo Code**, or **Windsurf**), paste this prompt into your agent and let it handle installation, credentials, login, and MCP client registration:
+
+> [!TIP]
+> **Copy-Paste Prompt for your AI Assistant:**
+>
+> ```text
+> Set up the Telegram MCP server in this project for me:
+> 1. Ensure Python 3.10+ is available and install dependencies with `pip install -r requirements.txt`.
+> 2. Check if `.env` exists. If not, copy `.env.example` to `.env`. Prompt me for my Telegram `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` (from https://my.telegram.org), and ask whether I prefer the Test Server (`TELEGRAM_TEST_MODE=true`, recommended for safe testing) or Production (`false`).
+> 3. Guide me through running `python3 login.py` to authenticate and save `TELEGRAM_SESSION` into `.env`.
+> 4. Register this MCP server in my agent's MCP configuration (running `python3` with the absolute path to `server.py` and the environment variables from `.env`).
+> 5. Verify that the MCP server starts cleanly and reports a healthy connection.
+> ```
+
+---
+
+### Option B: 🛠️ Manual Setup
+
+#### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/Telegram-mcp/telegram-mcp.git
@@ -41,7 +61,7 @@ cd telegram-mcp
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment
 
 Copy `.env.example` to `.env`:
 ```bash
@@ -55,7 +75,7 @@ TELEGRAM_API_HASH=your_api_hash
 TELEGRAM_TEST_MODE=false
 ```
 
-### 3. Generate Session (One-Time Login)
+#### 3. Generate Session (One-Time Login)
 
 Run the interactive login script:
 ```bash
@@ -64,7 +84,7 @@ python3 login.py
 * Enter your phone number and the verification code sent to your Telegram app.
 * The script saves your `TELEGRAM_SESSION` string automatically into `.env`.
 
-### 4. Run the MCP Server
+#### 4. Run the MCP Server
 
 ```bash
 python3 server.py
@@ -85,7 +105,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "telegram-bot": {
       "command": "python3",
-      "args": ["/path/to/telegram-bot-mcp/server.py"],
+      "args": ["/path/to/telegram-mcp/server.py"],
       "env": {
         "TELEGRAM_API_ID": "your_api_id",
         "TELEGRAM_API_HASH": "your_api_hash",
@@ -96,6 +116,21 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
+
+### Cursor / Cline / Roo Code
+Add to your `.cursor/mcp.json` or Cline/Roo MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "telegram-bot": {
+      "command": "python3",
+      "args": ["/path/to/telegram-mcp/server.py"]
+    }
+  }
+}
+```
+*(Note: `server.py` automatically loads credentials from `.env` in the project root if omitted from the config).*
 
 ---
 
