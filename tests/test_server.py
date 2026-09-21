@@ -138,6 +138,31 @@ class TestServerTools(unittest.TestCase):
             self.assertFalse(parsed["connected"])
             self.assertIn("No TELEGRAM_SESSION or TELEGRAM_SESSION_PATH", parsed["error"])
 
+    def test_status_tool_environment_mismatch(self):
+        import asyncio
+        import tempfile
+        from telethon.sessions import SQLiteSession
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            s = SQLiteSession(tf.name)
+            s.set_dc(2, "149.154.167.40", 443)  # Test DC
+            s.save()
+            s.close()
+
+            # .env configured as TELEGRAM_TEST_MODE=false (Production)
+            with patch.dict(os.environ, {
+                "TELEGRAM_SESSION_PATH": tf.name,
+                "TELEGRAM_SESSION": "",
+                "TELEGRAM_TEST_MODE": "false",
+                "TELEGRAM_IGNORE_ENV_MISMATCH": "false",
+            }):
+                raw_result = asyncio.run(server.telegram_status())
+                parsed = json.loads(raw_result)
+                self.assertFalse(parsed["connected"])
+                self.assertFalse(parsed["environment_match"])
+                self.assertEqual(parsed["session_environment"], "test")
+                self.assertIn("Telegram environment mismatch", parsed["error"])
+
     def test_get_user_profile_phone_masking(self):
         import asyncio
 
