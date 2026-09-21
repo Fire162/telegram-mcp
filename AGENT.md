@@ -59,7 +59,16 @@ The server supports two methods of authentication configured via environment var
    - Direct path to an existing Telethon SQLite session file (e.g. `TELEGRAM_SESSION_PATH=/root/my_account.session` or `./anon.session`).
    - If `TELEGRAM_SESSION` is set to a path ending in `.session` or an existing file on disk, it is automatically detected and treated as a session file path.
 
-## 3.2 Session Safety
+## 3.2 Environment Mismatch Shield
+
+Telegram's Test Server and Production Server use completely distinct data center IP addresses (e.g. Test DC 2: `149.154.167.40`, Production DC 2: `149.154.167.51`).
+
+The server automatically extracts the target data center IP from the session (`server_address`) and verifies that it matches `TELEGRAM_TEST_MODE`:
+- If `TELEGRAM_TEST_MODE=true` but the session belongs to Production (or vice versa), the server aborts connection with a descriptive error before Telegram rejects or burns the key.
+- `telegram_status` tool reports `session_environment` (`"test"` or `"production"`) and `environment_match` (`true` or `false`).
+- Set `TELEGRAM_IGNORE_ENV_MISMATCH=true` in `.env` if you explicitly wish to bypass this guardrail.
+
+## 3.3 Session Safety
 
 The server uses a process-level file lock (`/tmp/telegram-mcp.lock`) to prevent multiple instances from connecting with the same Telegram session simultaneously. If a second instance starts, it will fail immediately with a clear error instead of destroying the session.
 

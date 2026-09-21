@@ -17,6 +17,15 @@ load_dotenv()
 
 LOCKFILE_PATH = "/tmp/telegram-mcp.lock"
 
+TELEGRAM_TEST_IPS = {
+    "149.154.167.40",
+    "149.154.175.10",
+    "149.154.175.117",
+    "2001:67c:4e8:f002::e",
+    "2001:b88:1::10",
+    "2001:b88:2::bb",
+}
+
 
 class TelegramService:
     def __init__(self):
@@ -27,6 +36,24 @@ class TelegramService:
         self.last_flood_wait_seconds: int = 0
         self.session_mode: Optional[str] = None
         self.session_file_path: Optional[str] = None
+        self.session_environment: Optional[str] = None
+
+    @staticmethod
+    def detect_session_environment(session_or_address: Any) -> str:
+        """
+        Determines if a Telethon session or server IP belongs to 'test', 'production', or 'unknown'.
+        """
+        if hasattr(session_or_address, "server_address"):
+            addr = getattr(session_or_address, "server_address", None)
+        else:
+            addr = session_or_address
+
+        if not addr:
+            return "unknown"
+
+        if str(addr).strip() in TELEGRAM_TEST_IPS:
+            return "test"
+        return "production"
 
     def _acquire_process_lock(self):
         if self._lock_fd is not None:
@@ -105,6 +132,23 @@ class TelegramService:
                     "Provide a StringSession or path to a .session file."
                 )
 
+            session_env = self.detect_session_environment(session)
+            expected_env = "test" if is_test_mode else "production"
+
+            ignore_mismatch = os.environ.get("TELEGRAM_IGNORE_ENV_MISMATCH", "false").lower() == "true"
+            if session_env != "unknown" and session_env != expected_env and not ignore_mismatch:
+                dc_str = f" (DC {session.dc_id} @ {session.server_address})" if hasattr(session, "server_address") and session.server_address else ""
+                raise ValueError(
+                    f"Telegram environment mismatch detected!\n"
+                    f"  - Configured in .env: TELEGRAM_TEST_MODE={str(is_test_mode).lower()} ({expected_env.capitalize()} Server)\n"
+                    f"  - Session server: {session_env.capitalize()} Server{dc_str}\n"
+                    f"Connecting a {session_env} session to the {expected_env} server will fail or revoke authentication.\n"
+                    f"To fix: Set TELEGRAM_TEST_MODE={'true' if session_env == 'test' else 'false'} in .env, "
+                    f"or use a matching {expected_env} session file."
+                )
+
+            self.session_environment = session_env
+
             proxy = None
             proxy_host = os.environ.get("TELEGRAM_PROXY_HOST")
             if proxy_host:
@@ -121,7 +165,7 @@ class TelegramService:
 
             self.client = TelegramClient(session, api_id, api_hash, flood_sleep_threshold=5, proxy=proxy)
 
-            if is_test_mode:
+            if is_test_mode and (session.server_address is None or session.server_address in TELEGRAM_TEST_IPS):
                 self.client.session.set_dc(2, "149.154.167.40", 443)
 
             await self.client.connect()

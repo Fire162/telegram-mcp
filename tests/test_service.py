@@ -222,6 +222,65 @@ class TestTelegramService(unittest.TestCase):
                 call_args = mock_tg_cls.call_args[0]
                 self.assertIsInstance(call_args[0], SQLiteSession)
 
+    def test_detect_session_environment(self):
+        self.assertEqual(TelegramService.detect_session_environment("149.154.167.40"), "test")
+        self.assertEqual(TelegramService.detect_session_environment("149.154.175.10"), "test")
+        self.assertEqual(TelegramService.detect_session_environment("149.154.167.51"), "production")
+        self.assertEqual(TelegramService.detect_session_environment("91.108.56.130"), "production")
+        self.assertEqual(TelegramService.detect_session_environment(None), "unknown")
+
+    def test_get_client_environment_mismatch_error(self):
+        import tempfile
+        import os
+        from telethon.sessions import SQLiteSession
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            # Save session with test IP
+            s = SQLiteSession(tf.name)
+            s.set_dc(2, "149.154.167.40", 443)
+            s.save()
+            s.close()
+
+            # Attempt to connect with TELEGRAM_TEST_MODE=false (production)
+            with patch.dict(os.environ, {
+                "TELEGRAM_API_ID": "12345",
+                "TELEGRAM_API_HASH": "test_hash",
+                "TELEGRAM_SESSION_PATH": tf.name,
+                "TELEGRAM_TEST_MODE": "false",
+                "TELEGRAM_IGNORE_ENV_MISMATCH": "false",
+            }), patch.object(self.service, "_acquire_process_lock"):
+                with self.assertRaises(ValueError) as ctx:
+                    asyncio.run(self.service.get_client())
+                self.assertIn("Telegram environment mismatch detected", str(ctx.exception))
+                self.assertIn("Test Server", str(ctx.exception))
+                self.assertIn("Production Server", str(ctx.exception))
+
+    def test_get_client_environment_mismatch_ignored_with_flag(self):
+        import tempfile
+        import os
+        from telethon.sessions import SQLiteSession
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            s = SQLiteSession(tf.name)
+            s.set_dc(2, "149.154.167.40", 443)
+            s.save()
+            s.close()
+
+            mock_client = AsyncMock()
+            mock_client.is_connected = MagicMock(return_value=False)
+            mock_client.is_user_authorized = AsyncMock(return_value=True)
+
+            with patch.dict(os.environ, {
+                "TELEGRAM_API_ID": "12345",
+                "TELEGRAM_API_HASH": "test_hash",
+                "TELEGRAM_SESSION_PATH": tf.name,
+                "TELEGRAM_TEST_MODE": "false",
+                "TELEGRAM_IGNORE_ENV_MISMATCH": "true",
+            }), patch("telegram_service.TelegramClient", return_value=mock_client), \
+                patch.object(self.service, "_acquire_process_lock"):
+                client = asyncio.run(self.service.get_client())
+                self.assertEqual(client, mock_client)
+
 
 if __name__ == "__main__":
     unittest.main()

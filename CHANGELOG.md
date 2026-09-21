@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 * Direct Telethon SQLite session file path authentication via `TELEGRAM_SESSION_PATH` environment variable.
 * Automatic fallback and detection when `.session` file paths are passed inside `TELEGRAM_SESSION`.
 * Session mode (`"file"` or `"string"`) and session file metadata diagnostics in `telegram_status` tool.
+* Automatic session environment detection (`"test"` vs `"production"`) by inspecting session data center IP.
+* Telegram Environment Mismatch Shield: Prevents connecting with an incompatible session (e.g. Test session with `TELEGRAM_TEST_MODE=false`) to protect against auth failure or key revocation.
 
 ---
 

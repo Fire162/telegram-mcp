@@ -63,12 +63,40 @@ async def telegram_status() -> str:
     has_session = bool(session_path or session_str)
     session_mode = "file" if is_file_mode else ("string" if session_str else None)
 
+    session_env = "unknown"
+    session_dc = None
+    session_addr = None
+    if is_file_mode and resolved_session_path and os.path.exists(resolved_session_path):
+        try:
+            from telethon.sessions import SQLiteSession
+            temp_s = SQLiteSession(resolved_session_path)
+            session_env = telegram_service.detect_session_environment(temp_s)
+            session_dc = getattr(temp_s, "dc_id", None)
+            session_addr = getattr(temp_s, "server_address", None)
+        except Exception:
+            session_env = "unknown"
+    elif session_str and not is_file_mode:
+        try:
+            from telethon.sessions import StringSession
+            temp_s = StringSession(session_str)
+            session_env = telegram_service.detect_session_environment(temp_s)
+            session_dc = getattr(temp_s, "dc_id", None)
+            session_addr = getattr(temp_s, "server_address", None)
+        except Exception:
+            session_env = "unknown"
+
+    is_test_mode = os.environ.get("TELEGRAM_TEST_MODE", "false").lower() == "true"
+    expected_env = "test" if is_test_mode else "production"
+    env_match = True if session_env == "unknown" else (session_env == expected_env)
+
     status = {
         "test_mode": os.environ.get("TELEGRAM_TEST_MODE", "false"),
         "api_id_set": bool(os.environ.get("TELEGRAM_API_ID")),
         "api_hash_set": bool(os.environ.get("TELEGRAM_API_HASH")),
         "session_set": has_session,
         "session_mode": session_mode,
+        "session_environment": session_env,
+        "environment_match": env_match,
         "default_bot": os.environ.get("DEFAULT_TARGET_BOT", "(not set)"),
         "rate_limiting": {
             "flood_wait_events": getattr(telegram_service, "flood_wait_events", 0),
@@ -96,6 +124,16 @@ async def telegram_status() -> str:
     if session_mode == "file" and resolved_session_path and not os.path.exists(resolved_session_path):
         status["connected"] = False
         status["error"] = f"Session file not found at: {resolved_session_path}"
+        return json.dumps(status, indent=2)
+
+    if not env_match and os.environ.get("TELEGRAM_IGNORE_ENV_MISMATCH", "false").lower() != "true":
+        status["connected"] = False
+        addr_info = f" (DC {session_dc} @ {session_addr})" if session_addr else ""
+        status["error"] = (
+            f"Telegram environment mismatch: .env has TELEGRAM_TEST_MODE={str(is_test_mode).lower()} ({expected_env.capitalize()} Server), "
+            f"but session is configured for {session_env.capitalize()} Server{addr_info}. "
+            f"Update TELEGRAM_TEST_MODE={'true' if session_env == 'test' else 'false'} to match your session."
+        )
         return json.dumps(status, indent=2)
 
     try:
