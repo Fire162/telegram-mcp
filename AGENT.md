@@ -49,7 +49,17 @@ This guide documents the architecture, setup, development workflow, and conventi
 
 ---
 
-## 3.1 Session Safety
+## 3.1 Authentication & Session Options
+
+The server supports two methods of authentication configured via environment variables:
+
+1. **String Session (`TELEGRAM_SESSION`)**:
+   - In-memory Telethon `StringSession` string generated interactively via `python3 login.py`.
+2. **Session File Path (`TELEGRAM_SESSION_PATH`)**:
+   - Direct path to an existing Telethon SQLite session file (e.g. `TELEGRAM_SESSION_PATH=/root/my_account.session` or `./anon.session`).
+   - If `TELEGRAM_SESSION` is set to a path ending in `.session` or an existing file on disk, it is automatically detected and treated as a session file path.
+
+## 3.2 Session Safety
 
 The server uses a process-level file lock (`/tmp/telegram-mcp.lock`) to prevent multiple instances from connecting with the same Telegram session simultaneously. If a second instance starts, it will fail immediately with a clear error instead of destroying the session.
 

@@ -100,6 +100,43 @@ class TestServerTools(unittest.TestCase):
             self.assertEqual(parsed["rate_limiting"]["flood_wait_events"], 0)
             self.assertIn("proxy", parsed)
             self.assertFalse(parsed["proxy"]["configured"])
+            self.assertEqual(parsed["session_mode"], "string")
+
+    def test_status_tool_with_session_path(self):
+        import asyncio
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            mock_client = AsyncMock()
+            mock_me = MagicMock()
+            mock_me.id = 12345
+            mock_me.first_name = "Abhinav"
+            mock_me.last_name = None
+            mock_me.username = "abhinav"
+            mock_me.phone = None
+            mock_client.get_me = AsyncMock(return_value=mock_me)
+
+            with patch.dict(os.environ, {
+                "TELEGRAM_SESSION_PATH": tf.name,
+                "TELEGRAM_SESSION": "",
+            }), patch.object(server.telegram_service, "get_client", AsyncMock(return_value=mock_client)):
+                raw_result = asyncio.run(server.telegram_status())
+                parsed = json.loads(raw_result)
+                self.assertTrue(parsed["connected"])
+                self.assertEqual(parsed["session_mode"], "file")
+                self.assertTrue(parsed["session_file"]["exists"])
+                self.assertEqual(parsed["session_file"]["path"], os.path.abspath(tf.name))
+
+    def test_status_tool_missing_session(self):
+        import asyncio
+        with patch.dict(os.environ, {
+            "TELEGRAM_SESSION_PATH": "",
+            "TELEGRAM_SESSION": "",
+        }):
+            raw_result = asyncio.run(server.telegram_status())
+            parsed = json.loads(raw_result)
+            self.assertFalse(parsed["connected"])
+            self.assertIn("No TELEGRAM_SESSION or TELEGRAM_SESSION_PATH", parsed["error"])
 
     def test_get_user_profile_phone_masking(self):
         import asyncio

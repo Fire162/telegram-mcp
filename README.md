@@ -82,14 +82,21 @@ TELEGRAM_API_HASH=your_api_hash
 TELEGRAM_TEST_MODE=false
 ```
 
-#### 3. Generate Session (One-Time Login)
+#### 3. Configure Telegram Session
 
-Run the interactive login script:
-```bash
-python3 login.py
-```
-* Enter your phone number and the verification code sent to your Telegram app.
-* The script saves your `TELEGRAM_SESSION` string automatically into `.env`.
+Choose either of the two supported authentication methods:
+
+- **Option A (Interactive Login)**: Run the login helper:
+  ```bash
+  python3 login.py
+  ```
+  Enter your phone number and verification code. The script saves your `TELEGRAM_SESSION` string into `.env`.
+
+- **Option B (Direct Session File)**: If you already have an existing Telethon `.session` file (e.g., `anon.session` or `/path/to/my_account.session`), directly set `TELEGRAM_SESSION_PATH` in `.env`:
+  ```bash
+  echo "TELEGRAM_SESSION_PATH=/absolute/path/to/your.session" >> .env
+  ```
+  *(The server will automatically load and authorize directly from your session file without needing `login.py`)*.
 
 #### 4. Run the MCP Server
 
@@ -117,6 +124,7 @@ Add to your `claude_desktop_config.json`:
         "TELEGRAM_API_ID": "your_api_id",
         "TELEGRAM_API_HASH": "your_api_hash",
         "TELEGRAM_SESSION": "your_session_string",
+        "TELEGRAM_SESSION_PATH": "/path/to/your.session",
         "TELEGRAM_TEST_MODE": "false"
       }
     }

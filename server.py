@@ -27,9 +27,10 @@ async def lifespan(server):
 
 MCP_INSTRUCTIONS = """Telegram MCP Server (Telethon + MTProto).
 
-If tools return auth errors, the session needs to be regenerated:
+If tools return auth errors, configure TELEGRAM_SESSION or TELEGRAM_SESSION_PATH in .env, or generate one:
 1. Run: cd /root/bot-mcp && python3 login.py
-2. Restart the MCP server.
+2. Or set TELEGRAM_SESSION_PATH=/path/to/your.session in .env
+3. Restart the MCP server.
 
 Use telegram_status to check the current connection state before running other tools."""
 
@@ -43,11 +44,31 @@ async def telegram_status() -> str:
     Call this first to diagnose auth issues before using other tools.
     """
     import os
+    session_path = os.environ.get("TELEGRAM_SESSION_PATH", "").strip()
+    session_str = os.environ.get("TELEGRAM_SESSION", "").strip()
+
+    is_file_mode = False
+    resolved_session_path = None
+    if session_path:
+        is_file_mode = True
+        resolved_session_path = os.path.abspath(os.path.expanduser(session_path))
+        if not os.path.exists(resolved_session_path) and os.path.exists(resolved_session_path + ".session"):
+            resolved_session_path = resolved_session_path + ".session"
+    elif session_str:
+        expanded_cand = os.path.abspath(os.path.expanduser(session_str))
+        if session_str.endswith(".session") or os.path.exists(expanded_cand) or os.path.exists(expanded_cand + ".session"):
+            is_file_mode = True
+            resolved_session_path = expanded_cand if os.path.exists(expanded_cand) else (expanded_cand + ".session" if os.path.exists(expanded_cand + ".session") else expanded_cand)
+
+    has_session = bool(session_path or session_str)
+    session_mode = "file" if is_file_mode else ("string" if session_str else None)
+
     status = {
         "test_mode": os.environ.get("TELEGRAM_TEST_MODE", "false"),
         "api_id_set": bool(os.environ.get("TELEGRAM_API_ID")),
         "api_hash_set": bool(os.environ.get("TELEGRAM_API_HASH")),
-        "session_set": bool(os.environ.get("TELEGRAM_SESSION")),
+        "session_set": has_session,
+        "session_mode": session_mode,
         "default_bot": os.environ.get("DEFAULT_TARGET_BOT", "(not set)"),
         "rate_limiting": {
             "flood_wait_events": getattr(telegram_service, "flood_wait_events", 0),
@@ -61,9 +82,20 @@ async def telegram_status() -> str:
         },
     }
 
+    if session_mode == "file" and resolved_session_path:
+        status["session_file"] = {
+            "path": resolved_session_path,
+            "exists": os.path.exists(resolved_session_path),
+        }
+
     if not status["session_set"]:
         status["connected"] = False
-        status["error"] = "No TELEGRAM_SESSION in .env. Run: cd /root/bot-mcp && python3 login.py"
+        status["error"] = "No TELEGRAM_SESSION or TELEGRAM_SESSION_PATH in .env. Provide a session string or file path."
+        return json.dumps(status, indent=2)
+
+    if session_mode == "file" and resolved_session_path and not os.path.exists(resolved_session_path):
+        status["connected"] = False
+        status["error"] = f"Session file not found at: {resolved_session_path}"
         return json.dumps(status, indent=2)
 
     try:
