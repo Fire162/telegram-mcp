@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.16.0] - 2026-09-21 15:25 IST
+
+### Added
+* Direct Telethon SQLite session file path authentication via `TELEGRAM_SESSION_PATH` environment variable.
+* Automatic fallback and detection when `.session` file paths are passed inside `TELEGRAM_SESSION`.
+* Session mode (`"file"` or `"string"`) and session file metadata diagnostics in `telegram_status` tool.
+
+---
+
 ## [v1.15.0] — 2026-09-05 (22:08 IST)
 `[2026-09-05]{22:08:00} v1.15.0 Release: Add admin event log inspection and edit chat info tools #62 total MCP tools`
 

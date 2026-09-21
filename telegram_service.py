@@ -10,7 +10,7 @@ import traceback
 from typing import Optional, List, Dict, Any, Union
 from telethon import TelegramClient, custom, events, errors
 from telethon.tl import functions, types
-from telethon.sessions import StringSession
+from telethon.sessions import StringSession, SQLiteSession
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,6 +25,8 @@ class TelegramService:
         self._lock_fd: Optional[int] = None
         self.flood_wait_events: int = 0
         self.last_flood_wait_seconds: int = 0
+        self.session_mode: Optional[str] = None
+        self.session_file_path: Optional[str] = None
 
     def _acquire_process_lock(self):
         if self._lock_fd is not None:
@@ -68,14 +70,40 @@ class TelegramService:
 
             api_id_str = os.environ.get("TELEGRAM_API_ID")
             api_hash = os.environ.get("TELEGRAM_API_HASH")
-            session_str = os.environ.get("TELEGRAM_SESSION", "")
+            session_path = os.environ.get("TELEGRAM_SESSION_PATH", "").strip()
+            session_str = os.environ.get("TELEGRAM_SESSION", "").strip()
             is_test_mode = os.environ.get("TELEGRAM_TEST_MODE", "false").lower() == "true"
 
             if not api_id_str or not api_hash:
                 raise ValueError("TELEGRAM_API_ID and TELEGRAM_API_HASH must be configured in .env.")
 
+            # Auto-detect if TELEGRAM_SESSION is actually a file path
+            if not session_path and session_str:
+                expanded_cand = os.path.abspath(os.path.expanduser(session_str))
+                if session_str.endswith(".session") or os.path.exists(expanded_cand) or os.path.exists(expanded_cand + ".session"):
+                    session_path = session_str
+                    session_str = ""
+
             api_id = int(api_id_str)
-            session = StringSession(session_str)
+
+            if session_path:
+                resolved_path = os.path.abspath(os.path.expanduser(session_path))
+                if not os.path.exists(resolved_path) and os.path.exists(resolved_path + ".session"):
+                    resolved_path = resolved_path + ".session"
+                if not os.path.exists(resolved_path):
+                    raise FileNotFoundError(f"Telegram session file not found at: {resolved_path}")
+                session = SQLiteSession(resolved_path)
+                self.session_mode = "file"
+                self.session_file_path = resolved_path
+            elif session_str:
+                session = StringSession(session_str)
+                self.session_mode = "string"
+                self.session_file_path = None
+            else:
+                raise ValueError(
+                    "Neither TELEGRAM_SESSION nor TELEGRAM_SESSION_PATH is configured in .env. "
+                    "Provide a StringSession or path to a .session file."
+                )
 
             proxy = None
             proxy_host = os.environ.get("TELEGRAM_PROXY_HOST")
@@ -98,6 +126,11 @@ class TelegramService:
 
             await self.client.connect()
             if not await self.client.is_user_authorized():
+                if self.session_mode == "file":
+                    raise PermissionError(
+                        f"Telegram client is not authorized with session file '{self.session_file_path}'. "
+                        "Please verify the session file is valid and active."
+                    )
                 raise PermissionError(
                     "Telegram client is not authorized. Please run 'python3 login.py' to authenticate first."
                 )

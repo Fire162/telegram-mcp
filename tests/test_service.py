@@ -160,6 +160,68 @@ class TestTelegramService(unittest.TestCase):
             self.assertEqual(res["button_text"], "Open Game")
             self.assertEqual(res["message_id"], 101)
 
+    def test_get_client_with_session_path(self):
+        import tempfile
+        import os
+        from telethon.sessions import SQLiteSession
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            mock_client = AsyncMock()
+            mock_client.is_connected = MagicMock(return_value=False)
+            mock_client.is_user_authorized = AsyncMock(return_value=True)
+
+            with patch.dict(os.environ, {
+                "TELEGRAM_API_ID": "12345",
+                "TELEGRAM_API_HASH": "test_hash",
+                "TELEGRAM_SESSION_PATH": tf.name,
+                "TELEGRAM_SESSION": "",
+            }), patch("telegram_service.TelegramClient", return_value=mock_client) as mock_tg_cls, \
+                patch.object(self.service, "_acquire_process_lock"):
+                client = asyncio.run(self.service.get_client())
+                self.assertEqual(client, mock_client)
+                self.assertEqual(self.service.session_mode, "file")
+                self.assertEqual(self.service.session_file_path, os.path.abspath(tf.name))
+
+                mock_tg_cls.assert_called_once()
+                call_args = mock_tg_cls.call_args[0]
+                self.assertIsInstance(call_args[0], SQLiteSession)
+
+    def test_get_client_with_nonexistent_session_path(self):
+        import os
+        with patch.dict(os.environ, {
+            "TELEGRAM_API_ID": "12345",
+            "TELEGRAM_API_HASH": "test_hash",
+            "TELEGRAM_SESSION_PATH": "/nonexistent/test_path_12345.session",
+            "TELEGRAM_SESSION": "",
+        }), patch.object(self.service, "_acquire_process_lock"):
+            with self.assertRaises(FileNotFoundError) as ctx:
+                asyncio.run(self.service.get_client())
+            self.assertIn("Telegram session file not found", str(ctx.exception))
+
+    def test_get_client_auto_detect_session_path_in_telegram_session(self):
+        import tempfile
+        import os
+        from telethon.sessions import SQLiteSession
+
+        with tempfile.NamedTemporaryFile(suffix=".session") as tf:
+            mock_client = AsyncMock()
+            mock_client.is_connected = MagicMock(return_value=False)
+            mock_client.is_user_authorized = AsyncMock(return_value=True)
+
+            with patch.dict(os.environ, {
+                "TELEGRAM_API_ID": "12345",
+                "TELEGRAM_API_HASH": "test_hash",
+                "TELEGRAM_SESSION_PATH": "",
+                "TELEGRAM_SESSION": tf.name,
+            }), patch("telegram_service.TelegramClient", return_value=mock_client) as mock_tg_cls, \
+                patch.object(self.service, "_acquire_process_lock"):
+                client = asyncio.run(self.service.get_client())
+                self.assertEqual(client, mock_client)
+                self.assertEqual(self.service.session_mode, "file")
+                self.assertEqual(self.service.session_file_path, os.path.abspath(tf.name))
+                call_args = mock_tg_cls.call_args[0]
+                self.assertIsInstance(call_args[0], SQLiteSession)
+
 
 if __name__ == "__main__":
     unittest.main()
