@@ -21,6 +21,7 @@ dist/
 *.log
 .DS_Store
 
-# Internal roadmap
+# Internal roadmap & Agent memory
 TODO.md
+AGENT_HISTORY.md
 
