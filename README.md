@@ -12,8 +12,8 @@
 [![Companion CLI](https://img.shields.io/badge/Companion%20CLI-tg--cli-orange.svg?style=for-the-badge&logo=gnometerminal&logoColor=white)](https://github.com/Telegram-mcp/telegram-mcp-cli)
 
 <p align="center">
-  <b>A production-grade Model Context Protocol (MCP) server enabling AI Coding Agents to interact with, test, click buttons on, and verify Telegram bots end-to-end.</b><br>
-  Equipped with 62 specialized MCP tools, SQLite <code>.session</code> file support, inline/reply keyboard interaction, Telegram Mini App URL extraction, and arbitrary MTProto sandboxing.
+  <strong>Model Context Protocol (MCP) server for testing, automating, and interacting with Telegram bots via native MTProto.</strong><br>
+  Includes 62 tools for button clicks, messages, media verification, polls, Telegram Mini App launch URLs, and custom MTProto scripts.
 </p>
 
 </div>
